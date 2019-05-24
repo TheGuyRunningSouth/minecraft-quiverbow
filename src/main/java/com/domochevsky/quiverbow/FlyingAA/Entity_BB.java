@@ -1,15 +1,15 @@
 package com.domochevsky.quiverbow.FlyingAA;
-
+/*
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
-
+/*
 import com.domochevsky.quiverbow.AI.AI_RandomEquip;
 import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
-
+/* I'll deal with this once I get the regular one working
 public class Entity_BB extends Entity_AA
 {
 	public double movementSpeed = 0.5d;	// Half speed. They're QUITE fast
@@ -19,14 +19,14 @@ public class Entity_BB extends Entity_AA
 	public Entity_BB(World world)
 	{
 		super(world);
-		this.renderDistanceWeight = 10.0d;
+		this.setRenderDistanceWeight(10.0d);
 		
 		this.height = 0.5f;
-		this.boundingBox.setBounds(-0.5d, 1.0d, -0.5d, 0.5d, 1.0d + this.height, 0.5d);
+		this.getEntityBoundingBox().setBounds(-0.5d, 1.0d, -0.5d, 0.5d, 1.0d + this.height, 0.5d);
 		
 		this.setCanPickUpLoot(false);
 		
-		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(this.movementSpeed);
+		this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(this.movementSpeed);
 		
 		//if (!world.isRemote) { AI_RandomEquip.setupGear(this); }	// Hand me my gear! 
 		
@@ -40,7 +40,7 @@ public class Entity_BB extends Entity_AA
 	{
 		super(world);
 		
-		this.renderDistanceWeight = 10.0d;
+		this.setRenderDistanceWeight(10.0d);
 		
 		if (player != null)
 		{
@@ -55,11 +55,11 @@ public class Entity_BB extends Entity_AA
 		}
 		
 		this.height = 0.5f;
-		this.boundingBox.setBounds(-0.5d, 1.0d, -0.5d, 0.5d, 1.0d + this.height, 0.5d);
+		this.getEntityBoundingBox().setBounds(-0.5d, 1.0d, -0.5d, 0.5d, 1.0d + this.height, 0.5d);
 		
 		this.setCanPickUpLoot(false);
 		
-		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(this.movementSpeed);
+		this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(this.movementSpeed);
 		
 		this.canFly = true;
 		this.hasMobilityUpgrade = true;
@@ -94,7 +94,7 @@ public class Entity_BB extends Entity_AA
 	
 	private void stayOffGround(int distance)
 	{
-		Block block = this.worldObj.getBlock(MathHelper.ceiling_double_int(this.posX), MathHelper.ceiling_double_int(this.posY - distance), MathHelper.ceiling_double_int(this.posZ));
+		Block block = this.worldObj.getBlock(MathHelper.ceil(this.posX), MathHelper.ceil(this.posY - distance), MathHelper.ceil(this.posZ));
 		
 		if (block == null) // We're above the void? Go up!
 		{
@@ -102,7 +102,7 @@ public class Entity_BB extends Entity_AA
 		}
 		else
 		{
-			if (block.getMaterial() == Material.air)
+			if (block.getMaterial() == Material.AIR)
 			{
 				//return;	// High enough up
 			}
@@ -112,4 +112,4 @@ public class Entity_BB extends Entity_AA
 			}
 		}
 	}
-}
+}*/

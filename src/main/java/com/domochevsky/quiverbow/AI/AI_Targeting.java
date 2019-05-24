@@ -1,12 +1,11 @@
 package com.domochevsky.quiverbow.AI;
-
+/*
 import java.util.List;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragon;
-import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.entity.monster.*;
 import net.minecraft.entity.passive.EntityChicken;
@@ -22,10 +21,10 @@ import net.minecraft.entity.passive.EntityWolf;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -79,7 +78,7 @@ public class AI_Targeting
 			if (currentWeapon instanceof FrostLancer) { angleMod /= 2; }		// Half gravity
 			else if (currentWeapon instanceof EnderRifle) { angleMod /= 2; }	// Half gravity
 			
-			turret.rotationPitch -= MathHelper.wrapAngleTo180_double(angleMod);
+			turret.rotationPitch -= MathHelper.wrapDegrees(angleMod);
 		}
 	}
 	
@@ -97,7 +96,7 @@ public class AI_Targeting
 	// Just looking
 	public static void targetNearestEntity(Entity_AA turret)
 	{
-		if (turret.hasRidingUpgrade && turret.riddenByEntity != null) // Not targeting anyone while being ridden
+		if (turret.hasRidingUpgrade && turret.getRidingEntity() != null) // Not targeting anyone while being ridden
 		{
 			turret.currentTarget = null;
 			return;
@@ -114,9 +113,9 @@ public class AI_Targeting
 		// Having a gander
 		turret.targetDelay = 20;	// Reset for next tick
 		
-		AxisAlignedBB box = turret.boundingBox.expand(turret.attackDistance, turret.attackDistance, turret.attackDistance);
+		AxisAlignedBB box = turret.getEntityBoundingBox().expand(turret.attackDistance, turret.attackDistance, turret.attackDistance);
 		
-		List list = turret.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, box);
+		List list = turret.world.getEntitiesWithinAABB(EntityLivingBase.class, box);
 		
 		int counter = 0;
 		
@@ -164,7 +163,7 @@ public class AI_Targeting
 				}
 			}
 			
-			if (!Helper.canEntityBeSeen(turret.worldObj, turret, potentialEntity)) { skip = true; }
+			if (!Helper.canEntityBeSeen(turret.world, turret, potentialEntity)) { skip = true; }
 			if (potentialEntity.isDead) { skip = true; }				// Not shooting at the dead
 			
 			// Not attacking people in creative mode
@@ -181,7 +180,7 @@ public class AI_Targeting
 			
 			if (!skip)	// Checks out?
 			{
-				double distance = turret.getDistanceSqToEntity(potentialEntity);
+				double distance = turret.getDistanceSq(potentialEntity);
 				
 				if (distance < closestDistance)
 				{
@@ -207,7 +206,7 @@ public class AI_Targeting
 		if (entity instanceof EntityPlayer)
 		{
 			EntityPlayer player = (EntityPlayer) entity;
-			if (player.getDisplayName().equals(turret.ownerName)) { return true; }	// Not shooting at my owner
+			if (player.getDisplayName().toString().equals(turret.ownerName)) { return true; }	// Not shooting at my owner
 		}
 		
 		return false;
@@ -220,7 +219,7 @@ public class AI_Targeting
 		{
 			EntityPlayer player = (EntityPlayer) entity;
 			
-			if (isNameOnWhitelist(turret, player.getDisplayName())) { return true; }	// Not shooting at their friends either
+			if (isNameOnWhitelist(turret, player.getDisplayName().toString())) { return true; }	// Not shooting at their friends either
 			else if (isNameOnWhitelist(turret, "player")) { return true; }				// Not shooting at players in general
 		}
 		
@@ -238,7 +237,7 @@ public class AI_Targeting
 		
 		// Bosses
 		else if (entity instanceof EntityDragon && isNameOnWhitelist(turret, "ender dragon")) { return true; }
-		else if (entity instanceof EntityDragonPart && isNameOnWhitelist(turret, "ender dragon")) { return true; }
+		//else if (entity instanceof EntityDragonPart && isNameOnWhitelist(turret, "ender dragon")) { return true; }
 		else if (entity instanceof EntityWither && isNameOnWhitelist(turret, "wither")) { return true; }
 		
 		// Hostiles
@@ -264,7 +263,7 @@ public class AI_Targeting
 		{
 			EntityLiving living = (EntityLiving) entity;
 			
-			if (living.hasCustomNameTag())
+			if (living.hasCustomName())
 			{
 				if (isNameOnWhitelist(turret, living.getCustomNameTag())) { return true; }
 			}
@@ -285,7 +284,7 @@ public class AI_Targeting
 		{
 			if (turret.storage[counter] != null)
 			{
-				if (turret.storage[counter].getItem() == Items.writable_book || turret.storage[counter].getItem() == Items.written_book)
+				if (turret.storage[counter].getItem() == Items.WRITABLE_BOOK || turret.storage[counter].getItem() == Items.WRITTEN_BOOK)
 				{
 					//System.out.println("[TURRET] Checking writable book for whitelist against " + playerName);
 					
@@ -339,7 +338,7 @@ public class AI_Targeting
 		if (!turret.hasFirstWeapon && !turret.hasSecondWeapon) { return false; }	// Don't have anything to shoot with
 		
 		if (turret.currentTarget == turret) { return false; }		// Can't target myself
-		if (!Helper.canEntityBeSeen(turret.worldObj, turret, turret.currentTarget)) { return false; }	// ...ALTERNATE alternate function with as few adjustments as possible
+		if (!Helper.canEntityBeSeen(turret.world, turret, turret.currentTarget)) { return false; }	// ...ALTERNATE alternate function with as few adjustments as possible
 		
 		if (turret.currentTarget.isDead) 	// Enough!
 		{
@@ -350,7 +349,7 @@ public class AI_Targeting
 		if (isNameOnWhitelist(turret, Commands.cmdSafeRange))	// Instructed to keep a minimum safe range
 		{
 			double minSafetyRange = getSafetyRange(turret, currentWeapon);
-			double distance = turret.getDistanceSqToEntity(turret.currentTarget);
+			double distance = turret.getDistanceSq(turret.currentTarget);
 			
 			if (minSafetyRange != -1 && distance < minSafetyRange) { return false; }	// Too close
 		}
@@ -375,7 +374,7 @@ public class AI_Targeting
 	}
 	
 	
-	public static MovingObjectPosition getMovingObjectPositionFromPlayer(World world, EntityPlayer player, double targetingDistance)
+	public static RayTraceResult getMovingObjectPositionFromPlayer(World world, EntityPlayer player, double targetingDistance)
 	{
 		float f = 1.0F;
 		float f1 = player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * f;
@@ -385,7 +384,7 @@ public class AI_Targeting
 		double playerY = player.prevPosY + (player.posY - player.prevPosY) * f + (world.isRemote ? player.getEyeHeight() - player.getDefaultEyeHeight() : player.getEyeHeight()); // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
 		double playerZ = player.prevPosZ + (player.posZ - player.prevPosZ) * f;
 		
-		Vec3 vecPlayer = Vec3.createVectorHelper(playerX, playerY, playerZ);
+		Vec3d vecPlayer = new Vec3d(playerX, playerY, playerZ);
 		
 		float f3 = MathHelper.cos(-f2 * 0.017453292F - (float)Math.PI);
 		float f4 = MathHelper.sin(-f2 * 0.017453292F - (float)Math.PI);
@@ -396,9 +395,9 @@ public class AI_Targeting
 		
 		double maxDistance = targetingDistance;
 		
-		Vec3 vecTarget = vecPlayer.addVector(f7 * maxDistance, f6 * maxDistance, f8 * maxDistance);
+		Vec3d vecTarget = vecPlayer.addVector(f7 * maxDistance, f6 * maxDistance, f8 * maxDistance);
 		
-		return world.func_147447_a(vecPlayer, vecTarget, false, false, true);	// false, true, false
+		return world.rayTraceBlocks(vecPlayer, vecTarget, false, false, true);	// false, true, false
 	}
 	
 	
@@ -425,3 +424,4 @@ public class AI_Targeting
 		return -1;	// Fallback for "no minimum range limit"
 	}
 }
+*/

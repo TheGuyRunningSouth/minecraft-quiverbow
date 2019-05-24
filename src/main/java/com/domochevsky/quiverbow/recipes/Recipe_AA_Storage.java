@@ -1,22 +1,24 @@
 package com.domochevsky.quiverbow.recipes;
-
+/*
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.ammo.PackedUpAA;
 
 public class Recipe_AA_Storage extends ShapedRecipes implements IRecipe 
 {
-	private ItemStack[] components;
+	private NonNullList<Ingredient> components;
 	private ItemStack result;
 	
-	public Recipe_AA_Storage(int sizeX, int sizeY, ItemStack[] components, ItemStack result) 
+	public Recipe_AA_Storage(String group, int sizeX, int sizeY, NonNullList<Ingredient> components, ItemStack result) 
 	{
-		super(sizeX, sizeY, components, result);
+		super(group, sizeX, sizeY, components, result);
 		
 		this.result = result;
 		this.components = components;
@@ -75,3 +77,4 @@ public class Recipe_AA_Storage extends ShapedRecipes implements IRecipe
 		return null;
 	}
 }
+*/

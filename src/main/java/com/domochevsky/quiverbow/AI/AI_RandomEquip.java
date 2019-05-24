@@ -1,5 +1,5 @@
 package com.domochevsky.quiverbow.AI;
-
+/*
 import java.util.Random;
 
 import com.domochevsky.quiverbow.Main;
@@ -12,7 +12,7 @@ public class AI_RandomEquip
 {
 	public static void setupGear(Entity_AA turret)
 	{
-		if (turret.worldObj.isRemote) { return; }	// Not doing this on client side
+		if (turret.world.isRemote) { return; }	// Not doing this on client side
 		
 		setUpgrades(turret);	// Step 1, sorting out what they can do
 		setWeapons(turret);		// Step 2, what do they hold?
@@ -90,7 +90,7 @@ public class AI_RandomEquip
     	}
     	
     	AI_WeaponHandler.setSecondWeapon(turret, new ItemStack(weapon));
-    	turret.setCurrentItemOrArmor(1, new ItemStack(turret.secondWeapon));	// Should have a second weapon as well now
+    	turret.setHeldItemOffhand(new ItemStack(turret.secondWeapon));	// Should have a second weapon as well now
 	}
 	
 	
@@ -99,3 +99,4 @@ public class AI_RandomEquip
 		// Might not be necessary, since we're not dropping that stuff anyway
 	}
 }
+*/

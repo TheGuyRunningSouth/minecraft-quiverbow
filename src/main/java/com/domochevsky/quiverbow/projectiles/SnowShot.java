@@ -10,7 +10,8 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.EntityBlaze;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 public class SnowShot extends _ProjectileBase
@@ -29,7 +30,7 @@ public class SnowShot extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)	// Server-side
+	public void onImpact(RayTraceResult target)	// Server-side
 	{
 		if (target.entityHit != null) 
     	{
@@ -53,12 +54,12 @@ public class SnowShot extends _ProjectileBase
 		else
 		{
 			// Glass breaking
-    		Helper.tryBlockBreak(this.worldObj, this, target, 1);
+    		Helper.tryBlockBreak(this.world, this, target, 1);
 		}
 
     	// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 12, (byte) 2);
-        this.worldObj.playSoundAtEntity(this, "random.pop", 1.0F, 0.5F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 12, (byte) 2);
+        //this.world.playSoundAtEntity(this, "random.pop", 1.0F, 0.5F);
         
         this.setDead();		// We've hit something, so begone with the projectile
 	}
@@ -72,12 +73,12 @@ public class SnowShot extends _ProjectileBase
 		int y = (int) this.posY;
 		int z = (int) this.posZ;
 		
-		Block hitBlock = this.worldObj.getBlock(x, y, z);
+		Block hitBlock = this.world.getBlockState(new BlockPos(x, y, z)).getBlock();
 		
-		if (hitBlock == Blocks.water || hitBlock == Blocks.flowing_water)
+		if (hitBlock == Blocks.WATER || hitBlock == Blocks.FLOWING_WATER)
 		{
 			// Hit a (flowing) water block, so turning that into ice now
-			this.worldObj.setBlock(x, y, z, Blocks.ice, 0, 3);
+			this.world.setBlockState(new BlockPos(x, y, z), Blocks.ICE.getDefaultState(), 3);
 		}
 	}	
 	

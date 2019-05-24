@@ -7,9 +7,11 @@ import com.domochevsky.quiverbow.net.NetHelper;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 public class LapisShot extends _ProjectileBase
@@ -18,6 +20,7 @@ public class LapisShot extends _ProjectileBase
 	public ShotPotion pot1;
 	public ShotPotion pot2;
 	public ShotPotion pot3;
+	
 		
 	public LapisShot(World world) { super(world); }
 	
@@ -28,7 +31,7 @@ public class LapisShot extends _ProjectileBase
     }
 	
 	@Override
-	public void onImpact(MovingObjectPosition movPos)	// Server-side
+	public void onImpact(RayTraceResult movPos)	// Server-side
 	{
 		if (movPos.entityHit != null) 		// We hit a living thing!
     	{	
@@ -54,22 +57,22 @@ public class LapisShot extends _ProjectileBase
 		{
 			//Helper.tryBlockBreak(this.worldObj, this, movPos, 1);
 			
-			if (Helper.tryBlockBreak(this.worldObj, this, movPos, 1)) { this.setDead(); } // Going straight through a thing
+			if (Helper.tryBlockBreak(this.world, this, movPos, 1)) { this.setDead(); } // Going straight through a thing
             else	// Didn't manage to break that block, so we're stuck now for a short while
             {
-        	
-            	this.stuckBlockX = movPos.blockX;
-                this.stuckBlockY = movPos.blockY;
-                this.stuckBlockZ = movPos.blockZ;
+            	this.stuckBlockPos = movPos.getBlockPos();
+            	//this.stuckBlockX = movPos.blockX;
+                //this.stuckBlockY = movPos.blockY;
+                //this.stuckBlockZ = movPos.blockZ;
                 
-                this.stuckBlock = this.worldObj.getBlock(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ);
-                this.inData = this.worldObj.getBlockMetadata(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ);
+                this.stuckBlock = this.world.getBlockState(this.stuckBlockPos).getBlock();
+                this.inState = this.world.getBlockState(this.stuckBlockPos);
                 
-                this.motionX = (double)((float)(movPos.hitVec.xCoord - this.posX));
-                this.motionY = (double)((float)(movPos.hitVec.yCoord - this.posY));
-                this.motionZ = (double)((float)(movPos.hitVec.zCoord - this.posZ));
+                this.motionX = (double)((float)(movPos.hitVec.x - this.posX));
+                this.motionY = (double)((float)(movPos.hitVec.y - this.posY));
+                this.motionZ = (double)((float)(movPos.hitVec.z - this.posZ));
                 
-                float distance = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
+                float distance = MathHelper.sqrt(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
                 
                 this.posX -= this.motionX / (double)distance * 0.05000000074505806D;
                 this.posY -= this.motionY / (double)distance * 0.05000000074505806D;
@@ -79,16 +82,16 @@ public class LapisShot extends _ProjectileBase
                 
                 this.arrowShake = 7;
 
-                if (this.stuckBlock.getMaterial() != Material.air)
+                if (this.stuckBlock.getMaterial(this.inState) != Material.AIR)
                 {
-                    this.stuckBlock.onEntityCollidedWithBlock(this.worldObj, this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ, this);
+                    this.stuckBlock.onEntityCollidedWithBlock(this.world, new BlockPos(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ), this.inState, this);
                 }
             }
 		}
     	
 		// SFX
-    	this.worldObj.playSoundAtEntity(this, "random.wood_click", 1.0F, 0.5F);
-        NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 3, (byte) 4);
+    	this.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 1.0F, 0.5F);
+        NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 3, (byte) 4);
         
         //this.setDead();		// We've hit something, so begone with the projectile
 	}
@@ -97,7 +100,7 @@ public class LapisShot extends _ProjectileBase
 	@Override
 	public void doFlightSFX() 
 	{ 
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 1, (byte) 2);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 1, (byte) 2);
 	}
 	
 	

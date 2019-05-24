@@ -2,15 +2,21 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -19,10 +25,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ammo.NeedleMagazine;
 import com.domochevsky.quiverbow.projectiles.Thorn;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ThornSpitter extends _WeaponBase
 {
@@ -36,7 +42,7 @@ public class ThornSpitter extends _WeaponBase
 
 	private String nameInternal = "Thorn Spitter";
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -44,22 +50,23 @@ public class ThornSpitter extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/ThornSpitter");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/ThornSpitter_Empty");
 	}
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 		
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 	
 	
@@ -87,14 +94,14 @@ public class ThornSpitter extends _WeaponBase
 		
 		// Creating the clip
     	EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-        entityitem.delayBeforeCanPickup = 10;
+    	entityitem.setPickupDelay(10);
         
         // And dropping it
         if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-        else { world.spawnEntityInWorld(entityitem); }
+        else { world.spawnEntity(entityitem); }
         
         // SFX
-        world.playSoundAtEntity(entity, "random.click", 1.7F, 1.3F);
+        entity.playSound(SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, 1.7F, 1.3F);
 	}
 	
 	
@@ -136,37 +143,37 @@ public class ThornSpitter extends _WeaponBase
 		Thorn projectile = new Thorn(world, (EntityLivingBase) entity, (float) Speed);
 		projectile.damage = dmg;
 		
-		world.spawnEntityInWorld(projectile); 
+		world.spawnEntity(projectile); 
 		
 		// SFX
-		world.playSoundAtEntity(entity, "random.click", 0.6F, 0.6F);
+		entity.playSound(SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, 0.6F, 0.6F);
 	}
 	
 	
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-	    super.addInformation(stack, player, list, par4);
+	    super.addInformation(stack, world, list, flag);
 	    
-	    if (player.capabilities.isCreativeMode)
+	    /*if (player.capabilities.isCreativeMode)
 	    {
-		    list.add(EnumChatFormatting.BLUE + "Thorns: INFINITE / " + this.getMaxDamage());
+		    list.add(TextFormatting.BLUE + "Thorns: INFINITE / " + this.getMaxDamage());
 	    }
 	    else
-	    {
+	    {*/
 	    	int ammo = this.getMaxDamage() - this.getDamage(stack);
-		    list.add(EnumChatFormatting.BLUE + "Thorns: " + ammo + " / " + this.getMaxDamage());
-	    }
+		    list.add(TextFormatting.BLUE + "Thorns: " + ammo + " / " + this.getMaxDamage());
+	    //}
 	    
-    	list.add(EnumChatFormatting.BLUE + "Damage: " + DmgMin + " - " + DmgMax);
+    	list.add(TextFormatting.BLUE + "Damage: " + DmgMin + " - " + DmgMax);
     	
-    	list.add(EnumChatFormatting.GREEN + "Burst 4 when firing.");
+    	list.add(TextFormatting.GREEN + "Burst 4 when firing.");
     	
-    	list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(Cooldown) + " sec on use.");
+    	list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(Cooldown) + " sec on use.");
 	    
-    	list.add(EnumChatFormatting.YELLOW + "Craft with a Thorn");
-	    list.add(EnumChatFormatting.YELLOW + "Magazine to reload.");
+    	list.add(TextFormatting.YELLOW + "Craft with a Thorn");
+	    list.add(TextFormatting.YELLOW + "Magazine to reload.");
 	   
 	    list.add("Built with experimental quad-piston tech.");
     }
@@ -195,14 +202,14 @@ public class ThornSpitter extends _WeaponBase
 		if (Enabled)
         {            
             // One Thorn Spitter (empty)
-    		GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "bib", "php", "sts",
-	                't', Blocks.tripwire_hook,
-	                'b', Blocks.iron_bars,
-	                'i', Items.iron_ingot,
-	                'h', Blocks.hopper,
-	         		's', Blocks.sticky_piston,
-	         		'p', Blocks.piston
-	        );
+    		/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "bib", "php", "sts",
+	                't', Blocks.TRIPWIRE_HOOK,
+	                'b', Blocks.IRON_BARS,
+	                'i', Items.IRON_INGOT,
+	                'h', Blocks.HOPPER,
+	         		's', Blocks.STICKY_PISTON,
+	         		'p', Blocks.PISTON
+	        );*/
         }
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 		

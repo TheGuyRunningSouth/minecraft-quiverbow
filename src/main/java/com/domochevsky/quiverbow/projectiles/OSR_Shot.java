@@ -2,8 +2,9 @@ package com.domochevsky.quiverbow.projectiles;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -28,12 +29,12 @@ public class OSR_Shot extends _ProjectileBase
 	@Override
 	public void doFlightSFX()
 	{				
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 3, (byte) 1);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 3, (byte) 1);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition movPos)
+	public void onImpact(RayTraceResult movPos)
 	{
 		if (movPos.entityHit != null) 		// We hit a living thing!
     	{		
@@ -53,13 +54,13 @@ public class OSR_Shot extends _ProjectileBase
 		else 	// Hit the terrain
 		{
 			// Glass breaking
-			if (Helper.tryBlockBreak(this.worldObj, this, movPos, 2) && this.entitiesHit < 2) { this.entitiesHit += 1; }
+			if (Helper.tryBlockBreak(this.world, this, movPos, 2) && this.entitiesHit < 2) { this.entitiesHit += 1; }
             else { this.setDead(); }	// Punching through glass, 2 thick
 		}
 		
 		// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 3, (byte) 1);
-		this.worldObj.playSoundAtEntity(this, "random.bowhit", 1.0F, 0.5F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 3, (byte) 1);
+		this.playSound(SoundEvents.ENTITY_ARROW_HIT, 1.0F, 0.5F);
 	}
 	
 	

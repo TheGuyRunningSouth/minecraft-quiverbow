@@ -31,7 +31,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -49,7 +49,7 @@ public class SoulShot extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 
     	{
@@ -89,7 +89,7 @@ public class SoulShot extends _ProjectileBase
     		else if (target.entityHit instanceof EntityWither) { this.damageShooter(); }
     		// else, not a known entity
     		
-    		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 11, (byte) 4);
+    		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 11, (byte) 4);
             
             this.setDead();		// We've hit something, so begone with the projectile
         }        
@@ -98,32 +98,32 @@ public class SoulShot extends _ProjectileBase
     		//Block block = this.worldObj.getBlock(target.blockX, target.blockY, target.blockZ);
 			
     		// Glass breaking
-            if (!Helper.tryBlockBreak(this.worldObj, this, target, 1)) { this.setDead(); } // Only begone if we didn't hit glass
+            if (!Helper.tryBlockBreak(this.world, this, target, 1)) { this.setDead(); } // Only begone if we didn't hit glass
     	}
 	}
 	
 	
-	void doCapture(MovingObjectPosition movobj, int eggtype)
+	void doCapture(RayTraceResult movobj, int eggtype)
     {
     	// Make it dead and gimme the egg
     	movobj.entityHit.setDead();
 		
-		ItemStack egg = new ItemStack(Items.spawn_egg, 1, eggtype);
+		ItemStack egg = new ItemStack(Items.SPAWN_EGG, 1, eggtype);
 		
 		if (this.shootingEntity == null) // Owner doesn't exist, so this has likely been used by a mob. Dropping the egg at target location
 		{ 
 			//System.out.println("[DEBUGCHEVSKY] Owner of SOUL SHOT is null. Now'd that happen?"); 
-			EntityItem entityitem = new EntityItem(this.worldObj, this.posX, this.posY + 1d, this.posZ, egg);
-	        entityitem.delayBeforeCanPickup = 10;
+			EntityItem entityitem = new EntityItem(this.world, this.posX, this.posY + 1d, this.posZ, egg);
+			entityitem.setPickupDelay(10);
 	        
-	        this.worldObj.spawnEntityInWorld(entityitem);
+	        this.world.spawnEntity(entityitem);
 		}
 		else
 		{
-			EntityItem entityitem = new EntityItem(this.worldObj, this.shootingEntity.posX, this.shootingEntity.posY + 1d, this.shootingEntity.posZ, egg);
-	        entityitem.delayBeforeCanPickup = 10;
+			EntityItem entityitem = new EntityItem(this.world, this.shootingEntity.posX, this.shootingEntity.posY + 1d, this.shootingEntity.posZ, egg);
+			entityitem.setPickupDelay(10);
 	        
-	        this.worldObj.spawnEntityInWorld(entityitem);
+	        this.world.spawnEntity(entityitem);
 		}
     }
 	
@@ -138,7 +138,7 @@ public class SoulShot extends _ProjectileBase
 		// Doing our own (reduced) gravity
 		this.motionY -= 0.025;	// Default is 0.05
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 6, (byte) 3);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 6, (byte) 3);
 	}	
 	
 	

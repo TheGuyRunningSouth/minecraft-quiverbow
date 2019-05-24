@@ -4,7 +4,8 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -14,7 +15,12 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.GameType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
 import net.minecraftforge.common.ForgeHooks;
@@ -25,10 +31,10 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.net.NetHelper;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class PowderKnuckle_Mod extends _WeaponBase
 {
@@ -39,7 +45,7 @@ public class PowderKnuckle_Mod extends _WeaponBase
 	private double ExplosionSize;
 
 	private boolean dmgTerrain;
-
+/*
 
 	@SideOnly(Side.CLIENT)
 	@Override
@@ -48,15 +54,16 @@ public class PowderKnuckle_Mod extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/PowderKnuckle_Modified");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/PowderKnuckle_Modified_Empty");
 	}
-
+*/
 
 	@Override
-	public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side, float sideX, float sideY, float sideZ)
+	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand ,EnumFacing side, float sideX, float sideY, float sideZ)
 	{
-		if (world.isRemote) { return false; }	// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return EnumActionResult.FAIL; }	// Not doing this on client side
 
 		// Right click
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return false; }	// Not loaded
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return EnumActionResult.FAIL; }	// Not loaded
 
 		this.consumeAmmo(stack, player, 1);
 
@@ -64,7 +71,7 @@ public class PowderKnuckle_Mod extends _WeaponBase
 		NetHelper.sendParticleMessageToAllPlayers(world, player.getEntityId(), (byte) 3, (byte) 4);	// smoke
 
 		// Dmg
-		world.createExplosion(player, x, y, z, (float) this.ExplosionSize, true); 	// 4.0F is TNT
+		world.createExplosion(player, pos.getX(), pos.getY(), pos.getZ(), (float) this.ExplosionSize, true); 	// 4.0F is TNT
 
 		// Mining
 		for (int xAxis = -1; xAxis <= 1; xAxis++) // Along the x axis
@@ -73,19 +80,19 @@ public class PowderKnuckle_Mod extends _WeaponBase
 			{
 				for (int zAxis = -1; zAxis <= 1; zAxis++) // Along the z axis
 				{
-					this.doMining(world, (EntityPlayerMP) player, x + xAxis, y + yAxis, z + zAxis);	// That should give me 3 iterations of each axis on every level
+					this.doMining(world, (EntityPlayerMP) player, pos.getX() + xAxis, pos.getY() + yAxis, pos.getZ() + zAxis);	// That should give me 3 iterations of each axis on every level
 				}
 			}
 		}
 
-		return true;
+		return EnumActionResult.SUCCESS;
 	}
 
 
 	@Override
 	public boolean onLeftClickEntity(ItemStack stack, EntityPlayer player, Entity entity)
 	{
-		if (player.worldObj.isRemote) { return false; }	// Not doing this on client side
+		if (player.world.isRemote) { return false; }	// Not doing this on client side
 
 		if (this.getDamage(stack) >= this.getMaxDamage())
 		{
@@ -98,10 +105,10 @@ public class PowderKnuckle_Mod extends _WeaponBase
 		this.consumeAmmo(stack, entity, 1);
 
 		// SFX
-		NetHelper.sendParticleMessageToAllPlayers(entity.worldObj, player.getEntityId(), (byte) 3, (byte) 4);	// smoke
+		NetHelper.sendParticleMessageToAllPlayers(entity.world, player.getEntityId(), (byte) 3, (byte) 4);	// smoke
 
 		// Dmg
-		entity.worldObj.createExplosion(player, entity.posX, entity.posY +0.5D, entity.posZ, (float) this.ExplosionSize, this.dmgTerrain); 	// 4.0F is TNT
+		entity.world.createExplosion(player, entity.posX, entity.posY +0.5D, entity.posZ, (float) this.ExplosionSize, this.dmgTerrain); 	// 4.0F is TNT
 		entity.setFire(2);																	// Setting fire to them for 2 sec, so pigs can drop cooked porkchops
 
 		entity.attackEntityFrom(DamageSource.causePlayerDamage(player), this.DmgMax);	// Dealing damage directly. Screw weapon attributes
@@ -112,38 +119,39 @@ public class PowderKnuckle_Mod extends _WeaponBase
 
 	void doMining(World world, EntityPlayerMP player, int x, int y, int z)	// Calling this 27 times, to blast mine a 3x3x3 area
 	{
-		Block toBeBroken = world.getBlock(x, y, z);
-		int meta = world.getBlockMetadata(x, y, z);
-
-		if (toBeBroken.getBlockHardness(world, x, y, z) == -1) { return; }	// Unbreakable
+		
+		IBlockState meta = world.getBlockState(new BlockPos(x, y, z));
+		Block toBeBroken = meta.getBlock();
+		
+		if (toBeBroken.getBlockHardness(meta, world, new BlockPos(x, y, z)) == -1) { return; }	// Unbreakable
 
 		if (toBeBroken.getHarvestLevel(meta) > 1) { return; }
-		if (toBeBroken.getMaterial() == Material.water) { return; }
-		if (toBeBroken.getMaterial() == Material.lava) { return; }
-		if (toBeBroken.getMaterial() == Material.air) { return; }
-		if (toBeBroken.getMaterial() == Material.portal) { return; }
+		if (toBeBroken.getMaterial(meta) == Material.WATER) { return; }
+		if (toBeBroken.getMaterial(meta) == Material.LAVA) { return; }
+		if (toBeBroken.getMaterial(meta) == Material.AIR) { return; }
+		if (toBeBroken.getMaterial(meta) == Material.PORTAL) { return; }
 
 		// Need to do checks here against invalid blocks
-		if (toBeBroken == Blocks.water) { return; }
-		if (toBeBroken == Blocks.flowing_water) { return; }
-		if (toBeBroken == Blocks.lava) { return; }
-		if (toBeBroken == Blocks.flowing_lava) { return; }
-		if (toBeBroken == Blocks.obsidian) { return; }
-		if (toBeBroken == Blocks.mob_spawner) { return; }
+		if (toBeBroken == Blocks.WATER) { return; }
+		if (toBeBroken == Blocks.FLOWING_WATER) { return; }
+		if (toBeBroken == Blocks.LAVA) { return; }
+		if (toBeBroken == Blocks.FLOWING_LAVA) { return; }
+		if (toBeBroken == Blocks.OBSIDIAN) { return; }
+		if (toBeBroken == Blocks.MOB_SPAWNER) { return; }
 
 		// Crashing blocks: Redstone Lamp, Extended Piston
 		// They're likely trying to drop things that cannot be dropped (active states of themselves)
 
 		//WorldSettings.GameType gametype = WorldSettings.GameType.getByName("survival");
-		WorldSettings.GameType gametype = world.getWorldInfo().getGameType();
-		BlockEvent.BreakEvent event = ForgeHooks.onBlockBreakEvent(world, gametype, player, x, y, z);
+		GameType gametype = world.getWorldInfo().getGameType();
+		int event = ForgeHooks.onBlockBreakEvent(world, gametype, player, new BlockPos(x, y, z));
 
-		if (event.isCanceled()) { return; }	// Not allowed to do this
+		if (event == -1) { return; }	// Not allowed to do this
 
 		//toBeBroken.dropBlockAsItem(world, x, x, z, meta, 0);	// The last one is Fortune
 
-		boolean removalSuccess = world.setBlockToAir(x, y, z);
-		if (removalSuccess) { toBeBroken.onBlockDestroyedByPlayer(world, x, y, z, meta); }
+		boolean removalSuccess = world.setBlockToAir(new BlockPos(x, y, z));
+		if (removalSuccess) { toBeBroken.onBlockDestroyedByPlayer(world,new BlockPos(x, y, z), meta); }
 
 		Item preBlockItem = toBeBroken.getItemDropped(meta, player.getRNG(), 0);
 
@@ -151,39 +159,39 @@ public class PowderKnuckle_Mod extends _WeaponBase
 
 		ItemStack blockItem = new ItemStack(preBlockItem);
 
-		blockItem.setItemDamage(meta);
+		//blockItem.setItemDamage(meta);
 
 		EntityItem entityItem = new EntityItem(world, x, y + 0.5d, z, blockItem);
-		entityItem.delayBeforeCanPickup = 10;
+		entityItem.setPickupDelay(10);
 
-		world.spawnEntityInWorld(entityItem);
+		world.spawnEntity(entityItem);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Gunpowder: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Gunpowder: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Gunpowder: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Gunpowder: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + (this.DmgMax + 1));
+		list.add(TextFormatting.BLUE + "Damage: " + (this.DmgMax + 1));
 
-		list.add(EnumChatFormatting.GREEN + "Explosion with radius " + this.ExplosionSize + " on hit.");
-		list.add(EnumChatFormatting.GREEN + "Mining 3x3x3 on use.");
-		list.add(EnumChatFormatting.GREEN + "Silktouch 1 on use.");
+		list.add(TextFormatting.GREEN + "Explosion with radius " + this.ExplosionSize + " on hit.");
+		list.add(TextFormatting.GREEN + "Mining 3x3x3 on use.");
+		list.add(TextFormatting.GREEN + "Silktouch 1 on use.");
 
-		list.add(EnumChatFormatting.YELLOW + "Punch to attack mobs, Use to attack terrain.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 gunpowder to reload.");
+		list.add(TextFormatting.YELLOW + "Punch to attack mobs, Use to attack terrain.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 gunpowder to reload.");
 
 		list.add("Modified for blast mining.");
 	}
@@ -211,15 +219,15 @@ public class PowderKnuckle_Mod extends _WeaponBase
 		if (this.Enabled)
 		{
 			// Modifying the powder knuckle once
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ooo", "oco", "i i",
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ooo", "oco", "i i",
 					'c', Helper.getWeaponStackByClass(PowderKnuckle.class, true),
-					'o', Blocks.obsidian,
-					'i', Items.iron_ingot
-					);
+					'o', Blocks.OBSIDIAN,
+					'i', Items.IRON_INGOT
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
-		ItemStack stack = new ItemStack(Items.gunpowder);
+		ItemStack stack = new ItemStack(Items.GUNPOWDER);
 
 		Helper.makeAmmoRecipe(stack, 1, 1, this.getMaxDamage(), this);
 		Helper.makeAmmoRecipe(stack, 2, 2, this.getMaxDamage(), this);

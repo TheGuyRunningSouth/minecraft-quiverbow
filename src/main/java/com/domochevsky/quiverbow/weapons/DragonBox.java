@@ -2,12 +2,18 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -16,10 +22,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ammo.RocketBundle;
 import com.domochevsky.quiverbow.projectiles.SmallRocket;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class DragonBox extends _WeaponBase
 {
@@ -32,7 +38,7 @@ public class DragonBox extends _WeaponBase
 
 	private boolean dmgTerrain;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -40,16 +46,17 @@ public class DragonBox extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/Dragonbox");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/Dragonbox_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -64,7 +71,7 @@ public class DragonBox extends _WeaponBase
 		dmg += this.DmgMin;								// Adding the min dmg of 10 back on top, giving us the proper damage range (10-20)
 
 		// SFX
-		world.playSoundAtEntity(entity, "fireworks.launch", 1.0F, 1.0F);
+		entity.playSound(SoundEvents.ENTITY_FIREWORK_LAUNCH, 1.0F, 1.0F);
 
 		// Firing
 		SmallRocket shot = new SmallRocket(world, entity, (float) this.Speed, 0, 0);
@@ -74,7 +81,7 @@ public class DragonBox extends _WeaponBase
 		shot.explosionSize = this.ExplosionSize;
 		shot.dmgTerrain = this.dmgTerrain;
 
-		world.spawnEntityInWorld(shot);
+		world.spawnEntity(shot);
 
 		this.consumeAmmo(stack, entity, 1);
 		this.setCooldown(stack, this.Cooldown);
@@ -83,25 +90,25 @@ public class DragonBox extends _WeaponBase
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (world.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Rockets: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Rockets: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Rockets: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Rockets: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
-		list.add(EnumChatFormatting.GREEN + "Fire for " + this.FireDur + " sec on hit");
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Firework");
-		list.add(EnumChatFormatting.YELLOW + "Bundles to reload.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
+		list.add(TextFormatting.GREEN + "Fire for " + this.FireDur + " sec on hit");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Firework");
+		list.add(TextFormatting.YELLOW + "Bundles to reload.");
 		list.add("Crank-powered. The metal is bent.");
 	}
 
@@ -137,12 +144,12 @@ public class DragonBox extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One dragonbox (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxy", "azy", "zxy",
-					'x', Items.stick,
-					'y', Items.string,
-					'z', Items.iron_ingot,
-					'a', Items.flint_and_steel
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxy", "azy", "zxy",
+					'x', Items.STICK,
+					'y', Items.STRING,
+					'z', Items.IRON_INGOT,
+					'a', Items.FLINT_AND_STEEL
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

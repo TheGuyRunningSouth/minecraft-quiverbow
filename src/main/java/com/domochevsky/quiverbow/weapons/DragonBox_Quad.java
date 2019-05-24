@@ -2,12 +2,18 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -16,10 +22,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ammo.RocketBundle;
 import com.domochevsky.quiverbow.projectiles.SmallRocket;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class DragonBox_Quad extends _WeaponBase
 {
@@ -33,7 +39,7 @@ public class DragonBox_Quad extends _WeaponBase
 
 	private boolean dmgTerrain;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -41,16 +47,17 @@ public class DragonBox_Quad extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/QuadBox");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/QuadBox_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -62,7 +69,7 @@ public class DragonBox_Quad extends _WeaponBase
 		Helper.knockUserBack(entity, this.Kickback);			// Kickback
 
 		// SFX
-		world.playSoundAtEntity(entity, "fireworks.launch", 1.0F, 1.0F);
+		entity.playSound(SoundEvents.ENTITY_FIREWORK_LAUNCH, 1.0F, 1.0F);
 
 		// Potential failure randomizer here? Causing the rockets to flip out and go off in random directions
 
@@ -104,38 +111,38 @@ public class DragonBox_Quad extends _WeaponBase
 		rocket.dmgTerrain = this.dmgTerrain;
 
 		// Firing
-		world.spawnEntityInWorld(rocket);
+		world.spawnEntity(rocket);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (world.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Rocket Sets: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Rocket Sets: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Rocket Sets: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Rocket Sets: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per rocket");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per rocket");
 
-		list.add(EnumChatFormatting.GREEN + "Scatter 4 on use");
-		list.add(EnumChatFormatting.GREEN + "Fire for " + this.FireDur + " sec on hit");
+		list.add(TextFormatting.GREEN + "Scatter 4 on use");
+		list.add(TextFormatting.GREEN + "Fire for " + this.FireDur + " sec on hit");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
 
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Rocket Bundles");
-		list.add(EnumChatFormatting.YELLOW + "to reload.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Rocket Bundles");
+		list.add(TextFormatting.YELLOW + "to reload.");
 
 		list.add("\"Four Dragonboxes strapped together.");
-		list.add(EnumChatFormatting.RED + "What could go wrong?" + EnumChatFormatting.GRAY + "\"");	// Right now? Nothing. I may have to think of something there
+		list.add(TextFormatting.RED + "What could go wrong?" + TextFormatting.GRAY + "\"");	// Right now? Nothing. I may have to think of something there
 	}
 
 
@@ -170,12 +177,12 @@ public class DragonBox_Quad extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One QuadBox (empty) An upgrade from the regular Dragonbox (so 3 more flint&steel + Pistons for reloading mechanism  + more barrels)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ddd", "pdp", "sts",
-					'p', Blocks.piston,
-					's', Blocks.sticky_piston,
-					't', Blocks.tripwire_hook,
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ddd", "pdp", "sts",
+					'p', Blocks.PISTON,
+					's', Blocks.STICKY_PISTON,
+					't', Blocks.TRIPWIRE_HOOK,
 					'd', Helper.getWeaponStackByClass(DragonBox.class, true)
-					);
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

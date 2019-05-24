@@ -2,13 +2,20 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -19,10 +26,10 @@ import com.domochevsky.quiverbow.ammo.Part_GatlingBarrel;
 import com.domochevsky.quiverbow.ammo.Part_GatlingBody;
 import com.domochevsky.quiverbow.projectiles.SugarRod;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class SugarEngine extends _WeaponBase
 {
@@ -38,7 +45,7 @@ public class SugarEngine extends _WeaponBase
 
 	public float Spread;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -46,25 +53,26 @@ public class SugarEngine extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/SugarGatling");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/SugarGatling_Empty");
 	}
-
+*/
 
 	int getSpinupTime() { return 30; }	// Time in ticks until we can start firing
 
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -73,9 +81,9 @@ public class SugarEngine extends _WeaponBase
 	{
 		if (!stack.hasTagCompound()) { stack.setTagCompound(new NBTTagCompound()); }
 		// Weapon is ready, so we can spin up now. set spin-down immunity to x ticks and spin up
-		stack.stackTagCompound.setInteger("spinDownImmunity", 20);	// Can't spin down for 20 ticks. Also indicates our desire to spin up
+		stack.getTagCompound().setInteger("spinDownImmunity", 20);	// Can't spin down for 20 ticks. Also indicates our desire to spin up
 
-		if (stack.stackTagCompound.getInteger("spinning") < this.getSpinupTime()) { return; } // Not ready yet, so keep spinning up
+		if (stack.getTagCompound().getInteger("spinning") < this.getSpinupTime()) { return; } // Not ready yet, so keep spinning up
 		// else, we're ready
 
 		this.setBurstFire(stack, 4);		// Setting the rods left to fire to 4, then going through that via onUpdate (Will be constantly refreshed if we're still spinning)
@@ -96,14 +104,14 @@ public class SugarEngine extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		//entityitem.delayBeforeCanPickup = 10;
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		//world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
 	}
 
 
@@ -117,28 +125,28 @@ public class SugarEngine extends _WeaponBase
 
 		if (stack.getTagCompound() == null) { stack.setTagCompound(new NBTTagCompound()); }	// Init
 
-		if (stack.stackTagCompound.getInteger("spinDownImmunity") == 0)	// Not firing and no immunity left, so spinning down
+		if (stack.getTagCompound().getInteger("spinDownImmunity") == 0)	// Not firing and no immunity left, so spinning down
 		{
-			if (stack.stackTagCompound.getInteger("spinning") > 0)
+			if (stack.getTagCompound().getInteger("spinning") > 0)
 			{
-				stack.stackTagCompound.setInteger("spinning", stack.stackTagCompound.getInteger("spinning") - 1);
+				stack.getTagCompound().setInteger("spinning", stack.getTagCompound().getInteger("spinning") - 1);
 
-				this.doSpinSFX(stack, world, entity);
+				//this.doSpinSFX(stack, world, entity);
 			}
 			// else, not spinning
 		}
 		else	// We're currently immune to spinning down, so decreasing that immunity time until we actually can
 		{
-			stack.stackTagCompound.setInteger("spinDownImmunity", stack.stackTagCompound.getInteger("spinDownImmunity") - 1);
+			stack.getTagCompound().setInteger("spinDownImmunity", stack.getTagCompound().getInteger("spinDownImmunity") - 1);
 
 			// Also assuming that we're trying to fire, so spinning up (This is a workaround for the fact that onRightClick isn't called every tick)
-			if (stack.stackTagCompound.getInteger("spinning") < this.getSpinupTime())
+			if (stack.getTagCompound().getInteger("spinning") < this.getSpinupTime())
 			{
-				stack.stackTagCompound.setInteger("spinning", stack.stackTagCompound.getInteger("spinning") + 1);
+				stack.getTagCompound().setInteger("spinning", stack.getTagCompound().getInteger("spinning") + 1);
 			}
 			// else, we've reached full spin
 
-			this.doSpinSFX(stack, world, entity);	// Spin down SFX
+			//this.doSpinSFX(stack, world, entity);	// Spin down SFX
 		}
 
 		if (this.getBurstFire(stack) > 0)
@@ -171,68 +179,68 @@ public class SugarEngine extends _WeaponBase
 		SugarRod projectile = new SugarRod(world, entity, (float) this.Speed, spreadHor, spreadVert);
 		projectile.damage =dmg;
 
-		world.spawnEntityInWorld(projectile);
+		world.spawnEntity(projectile);
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.wood_click", 1.0F, 0.2F);
-		world.playSoundAtEntity(entity, "random.break", 0.6F, 3.0F);
+		entity.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 1.0F, 0.2F);
+		entity.playSound(SoundEvents.ENTITY_ITEM_BREAK, 0.6F, 3.0F);
 	}
 
 
-	private void doSpinSFX(ItemStack stack, World world, Entity player)
+	private void doSpinSFX(ItemStack stack, World world, EntityPlayer player)
 	{
 		// SFX
-		int spin = stack.stackTagCompound.getInteger("spinning");
+		int spin = stack.getTagCompound().getInteger("spinning");
 
 		float volume = 0.8F;
 		float pitch = 1.8F;
 
 		// Increasing in frequency as we spin up
-		if (spin == 1) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }			// +4
-		else if (spin == 5) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +4
-		else if (spin == 9) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +4
+		if (spin == 1) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }			// +4
+		else if (spin == 5) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +4
+		else if (spin == 9) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +4
 
-		else if (spin == 13) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +3
-		else if (spin == 16) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +3
-		else if (spin == 19) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +3
+		else if (spin == 13) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +3
+		else if (spin == 16) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +3
+		else if (spin == 19) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +3
 
-		else if (spin == 21) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +2
-		else if (spin == 23) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +2
-		else if (spin == 25) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +2
+		else if (spin == 21) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +2
+		else if (spin == 23) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +2
+		else if (spin == 25) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +2
 
-		else if (spin == 27) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +1
-		else if (spin == 28) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +1
-		else if (spin == 29) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +1
+		else if (spin == 27) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +1
+		else if (spin == 28) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +1
+		else if (spin == 29) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +1
 
-		else if (spin >= 30) { world.playSoundAtEntity(player, "random.wood_click", volume, pitch); }	// +++
+		else if (spin >= 30) { world.playSound(player, player.getPosition(), SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, volume, pitch); }	// +++
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Sugar Rods: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Sugar Rods: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Sugar Rods: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Sugar Rods: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per rod.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per rod.");
 
-		list.add(EnumChatFormatting.GREEN + "Fires ~20 rods per second.");
+		list.add(TextFormatting.GREEN + "Fires ~20 rods per second.");
 
-		list.add(EnumChatFormatting.RED + "Start-up Time: " + this.displayInSec(this.getSpinupTime()) + " sec.");
+		list.add(TextFormatting.RED + "Start-up Time: " + this.displayInSec(this.getSpinupTime()) + " sec.");
 
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current clip.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with 1 Clip of Sugar Rods");
-		list.add(EnumChatFormatting.YELLOW + "to reload when empty.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current clip.");
+		list.add(TextFormatting.YELLOW + "Craft with 1 Clip of Sugar Rods");
+		list.add(TextFormatting.YELLOW + "to reload when empty.");
 
 		list.add("So many barrels. Why so many barrels?");
 	}
@@ -262,10 +270,10 @@ public class SugarEngine extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One Sugar Gatling (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "b b", "b b", " m ",
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "b b", "b b", " m ",
 					'b', Helper.getAmmoStack(Part_GatlingBarrel.class, 0),
 					'm', Helper.getAmmoStack(Part_GatlingBody.class, 0)
-					);
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

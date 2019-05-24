@@ -2,14 +2,19 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -19,10 +24,10 @@ import com.domochevsky.quiverbow.ammo.RedstoneMagazine;
 import com.domochevsky.quiverbow.net.NetHelper;
 import com.domochevsky.quiverbow.projectiles.RedLight;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class LightningRed extends _WeaponBase
 {
@@ -38,7 +43,7 @@ public class LightningRed extends _WeaponBase
 
 	private int PassThroughMax;
 	private int MaxTicks;
-
+/*
 
 	@SideOnly(Side.CLIENT)
 	@Override
@@ -47,24 +52,25 @@ public class LightningRed extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/LightningRed");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/LightningRed_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 
-		if (this.getDamage(stack) >= this.getMaxDamage() - 3) { return stack; }	// Needs at least 4 redstone per shot
+		if (this.getDamage(stack) >= this.getMaxDamage() - 3) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Needs at least 4 redstone per shot
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -76,8 +82,8 @@ public class LightningRed extends _WeaponBase
 		Helper.knockUserBack(entity, this.Kickback);			// Kickback
 
 		// SFX
-		world.playSoundAtEntity(entity, "ambient.weather.thunder", 1.0F, 0.5F);
-		world.playSoundAtEntity(entity, "fireworks.blast", 2.0F, 0.1F);
+		//world.playSoundAtEntity(entity, "ambient.weather.thunder", 1.0F, 0.5F);
+		//world.playSoundAtEntity(entity, "fireworks.blast", 2.0F, 0.1F);
 
 		NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 10, (byte) 4);
 
@@ -95,7 +101,7 @@ public class LightningRed extends _WeaponBase
 		shot.ignoreFrustumCheck = true;
 		shot.ticksInAirMax = this.MaxTicks;
 
-		world.spawnEntityInWorld(shot); 				// Firing!
+		world.spawnEntity(shot); 				// Firing!
 
 		this.setCooldown(stack, this.Cooldown);
 		if (this.consumeAmmo(stack, entity, 4)) { this.dropMagazine(world, stack, entity); }
@@ -116,50 +122,50 @@ public class LightningRed extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		entityitem.setPickupDelay(10);
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		//world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
 	}
 
 
 	@Override
 	void doCooldownSFX(World world, Entity entity) // Server side. Only done when held
 	{
-		world.playSoundAtEntity(entity, "random.fizz", 0.7F, 0.2F);
+		//world.playSoundAtEntity(entity, "random.fizz", 0.7F, 0.2F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Redstone: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Redstone: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Redstone: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Redstone: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
 
-		list.add(EnumChatFormatting.GREEN + "Punches through up to " + this.PassThroughMax  + " targets.");
-		list.add(EnumChatFormatting.GREEN + "Lightning strike on hit.");
+		list.add(TextFormatting.GREEN + "Punches through up to " + this.PassThroughMax  + " targets.");
+		list.add(TextFormatting.GREEN + "Lightning strike on hit.");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
-		list.add(EnumChatFormatting.RED + "Consumes 4 Redstone per shot.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.RED + "Consumes 4 Redstone per shot.");
 
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current magazine.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with a Redstone Magazine to reload.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current magazine.");
+		list.add(TextFormatting.YELLOW + "Craft with a Redstone Magazine to reload.");
 
 		list.add("The twin prongs are crackling.");
 	}
@@ -191,11 +197,11 @@ public class LightningRed extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One Lightning Red (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "q q", "qiq", "iti",
-					'q', Items.quartz,
-					'i', Items.iron_ingot,
-					't', Blocks.tripwire_hook
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "q q", "qiq", "iti",
+					'q', Items.QUARTZ,
+					'i', Items.IRON_INGOT,
+					't', Blocks.TRIPWIRE_HOOK
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

@@ -2,15 +2,22 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -18,10 +25,10 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.projectiles.SunLight;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Sunray extends _WeaponBase
 {
@@ -41,7 +48,7 @@ public class Sunray extends _WeaponBase
 		return 1d - dur;	// Reverse again. Tch
     }
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -49,15 +56,16 @@ public class Sunray extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/Sunray");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/Sunray_Empty");
 	}
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
 		
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 	
 	
@@ -83,11 +91,11 @@ public class Sunray extends _WeaponBase
 		shot.ignoreFrustumCheck = true;
 		shot.ticksInAirMax = this.MaxTicks;
 		
-		world.spawnEntityInWorld(shot); 	// Firing!
+		world.spawnEntity(shot); 	// Firing!
 		
 		// SFX
-		world.playSoundAtEntity(entity, "mob.blaze.death", 0.7F, 2.0F);
-		world.playSoundAtEntity(entity, "fireworks.blast", 2.0F, 0.1F);
+		entity.playSound(SoundEvents.ENTITY_BLAZE_DEATH, 0.7F, 2.0F);
+		entity.playSound(SoundEvents.ENTITY_FIREWORK_BLAST, 2.0F, 0.1F);
 		
 		this.setCooldown(stack, this.Cooldown);
 	}
@@ -97,8 +105,8 @@ public class Sunray extends _WeaponBase
 	public void onUpdate(ItemStack stack, World world, Entity entity, int animTick, boolean holdingItem) 	// Overhauled default
 	{
 		if (world.isRemote) { return; }	// Not doing this on client side
-		
-		int light = world.getBlockLightValue((int) entity.posX, (int) entity.posY + 1, (int) entity.posZ);
+		BlockPos oneAbove = new BlockPos(entity.posX, entity.posY + 1, entity.posZ);
+		int light = (int) world.getLightBrightness(oneAbove);
    		
    		if (light >= this.LightMin) 
    		{ 
@@ -111,32 +119,32 @@ public class Sunray extends _WeaponBase
 	@Override
 	void doCooldownSFX(World world, Entity entity) // Server side
 	{ 
-		world.playSoundAtEntity(entity, "random.fizz", 1.0F, 0.5F);
-		world.playSoundAtEntity(entity, "mob.cat.hiss", 0.6F, 2.0F);
+		entity.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, 1.0F, 0.5F);
+		entity.playSound(SoundEvents.ENTITY_CAT_HISS, 0.6F, 2.0F);
 	} 
 	
 	
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-	    super.addInformation(stack, player, list, par4);
+	    super.addInformation(stack, world, list, flag);
 	    
-	    if (stack.stackTagCompound != null)
+	    if (stack.getTagCompound() != null)
 	    {
 	    	double dur = (1d / Cooldown) * (Cooldown - this.getCooldown(stack));
 	    	double displayDur = (dur * 100);	// Casting to int. We only need the full digits
 	    	
-	    	list.add(EnumChatFormatting.BLUE + "Charge: " + (int) displayDur + "%");
+	    	list.add(TextFormatting.BLUE + "Charge: " + (int) displayDur + "%");
 	    }
 	    
-	    list.add(EnumChatFormatting.BLUE + "Damage: " + DmgMin + " - " + DmgMax);
+	    list.add(TextFormatting.BLUE + "Damage: " + DmgMin + " - " + DmgMax);
 	    
-	    list.add(EnumChatFormatting.GREEN + "Sets target on fire for " + FireDur + " sec.");
-	    list.add(EnumChatFormatting.GREEN + "Passes through walls.");
+	    list.add(TextFormatting.GREEN + "Sets target on fire for " + FireDur + " sec.");
+	    list.add(TextFormatting.GREEN + "Passes through walls.");
 	   
-	    list.add(EnumChatFormatting.RED + "Charges for " + this.displayInSec(Cooldown) + " sec after use.");
-	    list.add(EnumChatFormatting.RED + "Requires strong light to charge.");
+	    list.add(TextFormatting.RED + "Charges for " + this.displayInSec(Cooldown) + " sec after use.");
+	    list.add(TextFormatting.RED + "Requires strong light to charge.");
 	    
 	    list.add("The refurbished beacon emits a low hum.");
     }
@@ -170,13 +178,13 @@ public class Sunray extends _WeaponBase
 		if (Enabled)
         {
 			// Using a beacon and solar panels/Daylight Sensors, meaning a nether star is required. So this is a high power item
-			GameRegistry.addRecipe(new ItemStack(this), "bs ", "oos", " rt",
-            		'b', Blocks.beacon,
-            		'o', Blocks.obsidian,
-            		's', Blocks.daylight_detector,
-            		't', Blocks.tripwire_hook,
-            		'r', Items.repeater
-            );
+			/*GameRegistry.addRecipe(new ItemStack(this), "bs ", "oos", " rt",
+            		'b', Blocks.BEACON,
+            		'o', Blocks.OBSIDIAN,
+            		's', Blocks.DAYLIGHT_DETECTOR,
+            		't', Blocks.TRIPWIRE_HOOK,
+            		'r', Items.REPEATER
+            );*/
         }
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 	}
@@ -191,10 +199,10 @@ public class Sunray extends _WeaponBase
 	}
 	
 	
-	@Override
+	/*@Override
 	@SideOnly(Side.CLIENT)
 	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
 	{
 		list.add(new ItemStack(item, 1, 0));	// Only one, and it's full
-	}
+	}*/
 }

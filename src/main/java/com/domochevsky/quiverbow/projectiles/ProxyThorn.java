@@ -6,10 +6,13 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -17,12 +20,13 @@ import com.domochevsky.quiverbow.net.NetHelper;
 
 public class ProxyThorn extends _ProjectileBase
 {
+	private static final EnumFacing NULL = null;
 	public int proxyDelay = 20;	// Only checking every so often
 	private double thornSpeed = 1.5;
 	public double triggerDistance = 2.0;
 	public int ThornAmount = 32;
 	
-	private int hitSide = -1;
+	private EnumFacing hitSide = NULL;
 	
 	public ProxyThorn(World world) { super(world); }
 	
@@ -34,7 +38,7 @@ public class ProxyThorn extends _ProjectileBase
     }
 	
 	@Override
-	public void onImpact(MovingObjectPosition movPos)	// Server-side
+	public void onImpact(RayTraceResult movPos)	// Server-side
 	{
 		if (movPos.entityHit != null) 		// We hit a living thing!
     	{	
@@ -47,26 +51,24 @@ public class ProxyThorn extends _ProjectileBase
 		
 		else // Hit the terrain
 		{			
-			if (Helper.tryBlockBreak(this.worldObj, this, movPos, 1)) 	// Going straight through a thing
+			if (Helper.tryBlockBreak(this.world, this, movPos, 1)) 	// Going straight through a thing
 			{ 
 				//this.goBoom();
 			} 
 			else	// Didn't manage to break that block, so we're stuck now for a short while
 			{
-				this.stuckBlockX = movPos.blockX;
-				this.stuckBlockY = movPos.blockY;
-				this.stuckBlockZ = movPos.blockZ;
 				
-				this.stuckBlock = this.worldObj.getBlock(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ);
-				this.inData = this.worldObj.getBlockMetadata(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ);
 				
-				this.motionX = movPos.hitVec.xCoord - this.posX;
-				this.motionY = movPos.hitVec.yCoord - this.posY;
-				this.motionZ = movPos.hitVec.zCoord - this.posZ;
+				this.stuckBlock = this.world.getBlockState(movPos.getBlockPos()).getBlock();
+				this.inState = this.world.getBlockState(movPos.getBlockPos());
+				
+				this.motionX = movPos.hitVec.x - this.posX;
+				this.motionY = movPos.hitVec.y - this.posY;
+				this.motionZ = movPos.hitVec.z - this.posZ;
 				
 				this.hitSide = movPos.sideHit;	// Keeping track of the side we hit, for when we go boom
 				
-				float distance = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
+				float distance = MathHelper.sqrt(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
 				
 				this.posX -= this.motionX / (double) distance * 0.05000000074505806D;
 				this.posY -= this.motionY / (double) distance * 0.05000000074505806D;
@@ -76,18 +78,18 @@ public class ProxyThorn extends _ProjectileBase
 				
 				this.arrowShake = 7;
 				
-				if (this.stuckBlock.getMaterial() != Material.air)
+				if (this.stuckBlock.getMaterial(inState) != Material.AIR)
 				{
-					this.stuckBlock.onEntityCollidedWithBlock(this.worldObj, this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ, this);
+					this.stuckBlock.onEntityCollidedWithBlock(this.world, new BlockPos(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ), inState, this);
 				}
 			}
 			
-			this.boundingBox.setBounds(-0.2d, 0.0d, -0.2d, 0.2d, 0.2d, 0.2d);	// Attackable
+			//this.getEntityBoundingBox().setBounds(-0.2d, 0.0d, -0.2d, 0.2d, 0.2d, 0.2d);	// Attackable
 		}
     	
 		// SFX
-    	this.worldObj.playSoundAtEntity(this, "random.wood_click", 1.0F, 0.3F);
-        NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 3, (byte) 4);
+    	this.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 1.0F, 0.3F);
+        NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 3, (byte) 4);
         
         //this.setDead();		// We've hit something, so begone with the projectile
 	}
@@ -96,7 +98,7 @@ public class ProxyThorn extends _ProjectileBase
 	@Override
 	public void doFlightSFX() 
 	{ 
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 13, (byte) 2);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 13, (byte) 2);
 	}
 	
 	
@@ -117,8 +119,8 @@ public class ProxyThorn extends _ProjectileBase
 		this.proxyDelay = 20;	// Reset
 		
 		// Go time
-		AxisAlignedBB box = this.boundingBox.expand(this.triggerDistance, this.triggerDistance, this.triggerDistance);
-		List list = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, box);
+		AxisAlignedBB box = this.getEntityBoundingBox().expand(this.triggerDistance, this.triggerDistance, this.triggerDistance);
+		List list = this.world.getEntitiesWithinAABB(EntityLivingBase.class, box);
 		
 		Entity potentialEntity;
 		int counter = 0;
@@ -136,7 +138,7 @@ public class ProxyThorn extends _ProjectileBase
 				if (player.capabilities.isCreativeMode) { skip = true; }
 			}
 			
-			if (!skip && Helper.canEntityBeSeen(this.worldObj, this, potentialEntity))	// Only if we have a line of sight to them
+			if (!skip && Helper.canEntityBeSeen(this.world, this, potentialEntity))	// Only if we have a line of sight to them
 			{
 				this.goBoom(); // We can see them! Boom time!
 				return;
@@ -154,14 +156,14 @@ public class ProxyThorn extends _ProjectileBase
 		// Moving out of the block we're stuck in, to get a clear shot
 		// Sides: Bottom = 0, Top = 1, East = 2, West = 3, North = 4, South = 5.
 		
-		if (this.hitSide == 0) { this.posY -= 0.5; }
-		else if (this.hitSide == 1) { this.posY += 0.5; }
+		if (this.hitSide == EnumFacing.DOWN) { this.posY -= 0.5; }
+		else if (this.hitSide == EnumFacing.UP) { this.posY += 0.5; }
 		
-		else if (this.hitSide == 2) { this.posX += 0.5; }
-		else if (this.hitSide == 3) { this.posX -= 0.5; }
+		else if (this.hitSide == EnumFacing.EAST) { this.posX += 0.5; }
+		else if (this.hitSide == EnumFacing.WEST) { this.posX -= 0.5; }
 		
-		else if (this.hitSide == 4) { this.posZ += 0.5; }
-		else if (this.hitSide == 5) { this.posZ -= 0.5; }
+		else if (this.hitSide == EnumFacing.NORTH) { this.posZ += 0.5; }
+		else if (this.hitSide == EnumFacing.SOUTH) { this.posZ -= 0.5; }
 		
 		int amount = this.ThornAmount;
 		
@@ -172,8 +174,8 @@ public class ProxyThorn extends _ProjectileBase
 		}
 		
 		// SFX
-		this.worldObj.playSoundAtEntity(this, "random.explode", 0.3F, 2.0F);
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 11, (byte) 8);
+		this.playSound(SoundEvents.ENTITY_GENERIC_EXPLODE, 0.3F, 2.0F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 11, (byte) 8);
 		
 		this.setDead();	// We're done here
 	}
@@ -183,21 +185,21 @@ public class ProxyThorn extends _ProjectileBase
 	private void fireThorn()
 	{
 		// Random dir
-		int thornYaw = this.worldObj.rand.nextInt(360) + 1;	// Range will be between 1 and 360
+		int thornYaw = this.world.rand.nextInt(360) + 1;	// Range will be between 1 and 360
 		thornYaw -= 180;	// Range between -180 and 180
 		
-		int thornPitch = this.worldObj.rand.nextInt(360) + 1;	// Range will be between 1 and 360
+		int thornPitch = this.world.rand.nextInt(360) + 1;	// Range will be between 1 and 360
 		thornPitch -= 180;	// Range between -180 and 180
 		
-		int dmg = this.worldObj.rand.nextInt(2) + 1;	// Range will be between 1 and 2
+		int dmg = this.world.rand.nextInt(2) + 1;	// Range will be between 1 and 2
 		
 		// Firing
-		Thorn projectile = new Thorn(this.worldObj, this, (float) this.thornSpeed, (float) thornYaw, (float) thornPitch);
+		Thorn projectile = new Thorn(this.world, this, (float) this.thornSpeed, (float) thornYaw, (float) thornPitch);
 		projectile.damage = dmg;
 		
 		projectile.shootingEntity = this.shootingEntity;	// Keeping that chain alive
 		
-		this.worldObj.spawnEntityInWorld(projectile); 
+		this.world.spawnEntity(projectile); 
 	}
 	
 	

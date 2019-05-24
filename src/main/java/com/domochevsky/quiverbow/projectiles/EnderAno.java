@@ -3,8 +3,9 @@ package com.domochevsky.quiverbow.projectiles;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -36,7 +37,7 @@ public class EnderAno extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 		// We hit a living thing!
     	{			
@@ -54,13 +55,13 @@ public class EnderAno extends _ProjectileBase
 		else 
         {			
 			// Glass breaking
-        	Helper.tryBlockBreak(this.worldObj, this, target, 1);	// Medium strength
+        	Helper.tryBlockBreak(this.world, this, target, 1);	// Medium strength
             
         }
 		
 		// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 6, (byte) 8);
-		this.worldObj.playSoundAtEntity(this, "fireworks.largeBlast", 0.7F, 0.5F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 6, (byte) 8);
+		this.playSound(SoundEvents.ENTITY_FIREWORK_LARGE_BLAST, 0.7F, 0.5F);
 		
 		this.setDead();	// Hit something, so we're done here
 	}

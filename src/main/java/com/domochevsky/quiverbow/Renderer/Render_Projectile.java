@@ -1,13 +1,12 @@
 package com.domochevsky.quiverbow.Renderer;
-
+/*
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Items;
-import net.minecraft.util.IIcon;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
@@ -89,7 +88,7 @@ public class Render_Projectile extends Render
 	
 	public void doRender_Arrow(_ProjectileBase shot, double x, double y, double z, float par8, float par9)
     {
-        this.bindEntityTexture(shot);
+        /*this.bindEntityTexture(shot);
        
         GL11.glPushMatrix();
         GL11.glTranslatef((float)x, (float)y, (float)z);
@@ -153,7 +152,7 @@ public class Render_Projectile extends Render
         }
 
         GL11.glDisable(GL12.GL_RESCALE_NORMAL);
-        GL11.glPopMatrix();
+        GL11.glPopMatrix();* /
     }
 	
 	
@@ -170,7 +169,7 @@ public class Render_Projectile extends Render
         GL11.glTranslatef((float)x, (float)y, (float)z);
         GL11.glScalef(0.5F, 0.5F, 0.5F);
         
-        Tessellator tes = Tessellator.instance;		// Grab a instance of the tesselator here (non-static, as they say)
+        Tessellator tes = Tessellator.getInstance();		// Grab a instance of the tesselator here (non-static, as they say)
         
         GL11.glRotatef(par1Entity.prevRotationYaw + (par1Entity.rotationYaw - par1Entity.prevRotationYaw) * tick - 90.0F, 0.0F, 1.0F, 0.0F);
         GL11.glRotatef(par1Entity.prevRotationPitch + (par1Entity.rotationPitch - par1Entity.prevRotationPitch) * tick, 0.0F, 0.0F, 1.0F);
@@ -187,13 +186,15 @@ public class Render_Projectile extends Render
             GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
             GL11.glNormal3f(0.0F, 0.0F, f10);
             
-            tes.startDrawingQuads();
+            //tes.startDrawingQuads();
             //			 		 X      Y     Z     TX,   TY
+            /*
             tes.addVertexWithUV(-length, -width, 0.0D, 0, 0);
             tes.addVertexWithUV( length, -width, 0.0D, 0, 1);
             tes.addVertexWithUV( length,  width, 0.0D, 1, 1);
             tes.addVertexWithUV(-length,  width, 0.0D, 1, 0);
             tes.draw();
+            * /
         }
 
         GL11.glDisable(GL12.GL_RESCALE_NORMAL);
@@ -215,36 +216,36 @@ public class Render_Projectile extends Render
 	        float f2 = 0.5f;
 
 			GL11.glScalef(f2 / 1.0F, f2 / 1.0F, f2 / 1.0F);
+	        /*
+	        IIcon icon = Items.BAKED_POTATO.getIconFromDamage(0);	// Default, to be overridden with the actual thing
 	        
-	        IIcon icon = Items.baked_potato.getIconFromDamage(0);	// Default, to be overridden with the actual thing
+	        if (type == 1) { icon = Items.GOLD_NUGGET.getIconFromDamage(0); }
+	        else if (type == 2) { icon = Items.GLASS_BOTTLE.getIconFromDamage(0); }
+	        else if (type == 3) { icon = Items.BAKED_POTATO.getIconFromDamage(0); }
+	        else if (type == 4) { icon = Items.MELON_SEEDS.getIconFromDamage(0); }
+	        else if (type == 5) { icon = Items.GLOWSTONE_DUST.getIconFromDamage(0); }
+	        else if (type == 6) { icon = Items.WATER_BUCKET.getIconFromDamage(0); }
+	        else if (type == 7) { icon = Items.SNOWBALL.getIconFromDamage(0); }
+	        * /
+	        Tessellator tessellator = Tessellator.getInstance();
 	        
-	        if (type == 1) { icon = Items.gold_nugget.getIconFromDamage(0); }
-	        else if (type == 2) { icon = Items.glass_bottle.getIconFromDamage(0); }
-	        else if (type == 3) { icon = Items.baked_potato.getIconFromDamage(0); }
-	        else if (type == 4) { icon = Items.melon_seeds.getIconFromDamage(0); }
-	        else if (type == 5) { icon = Items.glowstone_dust.getIconFromDamage(0); }
-	        else if (type == 6) { icon = Items.water_bucket.getIconFromDamage(0); }
-	        else if (type == 7) { icon = Items.snowball.getIconFromDamage(0); }
-	        
-	        Tessellator tessellator = Tessellator.instance;
-	        
-			float f3 = icon.getMinU();
-	        float f4 = icon.getMaxU();
-	        float f5 = icon.getMinV();
-	        float f6 = icon.getMaxV();
-	        float f7 = 1.0F;
-	        float f8 = 0.5F;
-	        float f9 = 0.25F;
+			float f3 ;//= icon.getMinU();
+	        float f4 ;//= icon.getMaxU();
+	        float f5 ;//= icon.getMinV();
+	        float f6 ;//= icon.getMaxV();
+	        float f7 ;//= 1.0F;
+	        float f8 ;//= 0.5F;
+	        float f9 ;//= 0.25F;
 	        
 	        GL11.glRotatef(180.0F - this.renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
 	        GL11.glRotatef(-this.renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
 	        
-	        tessellator.startDrawingQuads();
-		        tessellator.setNormal(0.0F, 1.0F, 0.0F);
-		        tessellator.addVertexWithUV((double)(0.0F - f8), (double)(0.0F - f9), 0.0D, (double)f3, (double)f6);
-		        tessellator.addVertexWithUV((double)(f7 - f8), (double)(0.0F - f9), 0.0D, (double)f4, (double)f6);
-		        tessellator.addVertexWithUV((double)(f7 - f8), (double)(1.0F - f9), 0.0D, (double)f4, (double)f5);
-		        tessellator.addVertexWithUV((double)(0.0F - f8), (double)(1.0F - f9), 0.0D, (double)f3, (double)f5);
+	       // tessellator.startDrawingQuads();
+		     //   tessellator.setNormal(0.0F, 1.0F, 0.0F);
+		       // tessellator.addVertexWithUV((double)(0.0F - f8), (double)(0.0F - f9), 0.0D, (double)f3, (double)f6);
+		       // tessellator.addVertexWithUV((double)(f7 - f8), (double)(0.0F - f9), 0.0D, (double)f4, (double)f6);
+		       // tessellator.addVertexWithUV((double)(f7 - f8), (double)(1.0F - f9), 0.0D, (double)f4, (double)f5);
+		       // tessellator.addVertexWithUV((double)(0.0F - f8), (double)(1.0F - f9), 0.0D, (double)f3, (double)f5);
 	        tessellator.draw();
 	        
 	        GL11.glDisable(GL12.GL_RESCALE_NORMAL);
@@ -259,7 +260,7 @@ public class Render_Projectile extends Render
         GL11.glTranslatef((float)par2, (float)par4, (float)par6);
         GL11.glRotatef(par1EntityArrow.prevRotationYaw + (par1EntityArrow.rotationYaw - par1EntityArrow.prevRotationYaw) * par9 - 90.0F, 0.0F, 1.0F, 0.0F);
         GL11.glRotatef(par1EntityArrow.prevRotationPitch + (par1EntityArrow.rotationPitch - par1EntityArrow.prevRotationPitch) * par9, 0.0F, 0.0F, 1.0F);
-        Tessellator tessellator = Tessellator.instance;
+        Tessellator tessellator = Tessellator.getInstance();
         byte b0 = 0;
         float f2 = 0.0F;
         float f3 = 0.5F;
@@ -276,29 +277,29 @@ public class Render_Projectile extends Render
         GL11.glScalef(f10, f10, f10);
         GL11.glTranslatef(-4.0F, 0.0F, 0.0F);
         GL11.glNormal3f(f10, 0.0F, 0.0F);
-        tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(-7.0D, -2.0D, -2.0D, (double)f6, (double)f8);
-        tessellator.addVertexWithUV(-7.0D, -2.0D, 2.0D, (double)f7, (double)f8);
-        tessellator.addVertexWithUV(-7.0D, 2.0D, 2.0D, (double)f7, (double)f9);
-        tessellator.addVertexWithUV(-7.0D, 2.0D, -2.0D, (double)f6, (double)f9);
+        //tessellator.startDrawingQuads();
+        //tessellator.addVertexWithUV(-7.0D, -2.0D, -2.0D, (double)f6, (double)f8);
+        //tessellator.addVertexWithUV(-7.0D, -2.0D, 2.0D, (double)f7, (double)f8);
+        //tessellator.addVertexWithUV(-7.0D, 2.0D, 2.0D, (double)f7, (double)f9);
+        //tessellator.addVertexWithUV(-7.0D, 2.0D, -2.0D, (double)f6, (double)f9);
         tessellator.draw();
         GL11.glNormal3f(-f10, 0.0F, 0.0F);
-        tessellator.startDrawingQuads();
-        tessellator.addVertexWithUV(-7.0D, 2.0D, -2.0D, (double)f6, (double)f8);
-        tessellator.addVertexWithUV(-7.0D, 2.0D, 2.0D, (double)f7, (double)f8);
-        tessellator.addVertexWithUV(-7.0D, -2.0D, 2.0D, (double)f7, (double)f9);
-        tessellator.addVertexWithUV(-7.0D, -2.0D, -2.0D, (double)f6, (double)f9);
+        //tessellator.startDrawingQuads();
+        //tessellator.addVertexWithUV(-7.0D, 2.0D, -2.0D, (double)f6, (double)f8);
+        //tessellator.addVertexWithUV(-7.0D, 2.0D, 2.0D, (double)f7, (double)f8);
+        //tessellator.addVertexWithUV(-7.0D, -2.0D, 2.0D, (double)f7, (double)f9);
+        //tessellator.addVertexWithUV(-7.0D, -2.0D, -2.0D, (double)f6, (double)f9);
         tessellator.draw();
 
         for (int i = 0; i < 4; ++i)
         {
             GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
             GL11.glNormal3f(0.0F, 0.0F, f10);
-            tessellator.startDrawingQuads();
-            tessellator.addVertexWithUV(-8.0D, -2.0D, 0.0D, (double)f2, (double)f4);
-            tessellator.addVertexWithUV(8.0D, -2.0D, 0.0D, (double)f3, (double)f4);
-            tessellator.addVertexWithUV(8.0D, 2.0D, 0.0D, (double)f3, (double)f5);
-            tessellator.addVertexWithUV(-8.0D, 2.0D, 0.0D, (double)f2, (double)f5);
+            //tessellator.startDrawingQuads();
+            //tessellator.addVertexWithUV(-8.0D, -2.0D, 0.0D, (double)f2, (double)f4);
+            //tessellator.addVertexWithUV(8.0D, -2.0D, 0.0D, (double)f3, (double)f4);
+            //tessellator.addVertexWithUV(8.0D, 2.0D, 0.0D, (double)f3, (double)f5);
+          //  tessellator.addVertexWithUV(-8.0D, 2.0D, 0.0D, (double)f2, (double)f5);
             tessellator.draw();
         }
 
@@ -320,7 +321,7 @@ public class Render_Projectile extends Render
         GL11.glTranslatef((float)x, (float)y, (float)z);
         GL11.glScalef(0.5F, 0.5F, 0.5F);
         
-        Tessellator tes = Tessellator.instance;		// Grab a instance of the tesselator here (non-static, as they say)
+        Tessellator tes = Tessellator.getInstance();		// Grab a instance of the tesselator here (non-static, as they say)
         
         GL11.glRotatef(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * tick - 90.0F, 0.0F, 1.0F, 0.0F);
         GL11.glRotatef(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * tick, 0.0F, 0.0F, 1.0F);
@@ -336,14 +337,14 @@ public class Render_Projectile extends Render
         {
             GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
             GL11.glNormal3f(0.0F, 0.0F, f10);
-            
+           /* 
             tes.startDrawingQuads();
             //			 		 X      Y     Z     TX,   TY
             tes.addVertexWithUV(-length, -width, 0.0D, 0, 0);
             tes.addVertexWithUV( length, -width, 0.0D, 0, 1);
             tes.addVertexWithUV( length,  width, 0.0D, 1, 1);
             tes.addVertexWithUV(-length,  width, 0.0D, 1, 0);
-            tes.draw();
+            tes.draw();* /
         }
 
         GL11.glDisable(GL12.GL_RESCALE_NORMAL);
@@ -414,8 +415,8 @@ public class Render_Projectile extends Render
 		float zPosEnd = (float) (entity.ownerZ - entity.posZ - (entity.prevPosZ - entity.posZ) * (double) (1.0F - tick));
 		
 		//for rotation/distance
-		float f7 = MathHelper.sqrt_float(xPosEnd * xPosEnd + zPosEnd * zPosEnd);
-		float f8 = MathHelper.sqrt_float(xPosEnd * xPosEnd + yPosEnd * yPosEnd + zPosEnd * zPosEnd);
+		float f7 = MathHelper.sqrt(xPosEnd * xPosEnd + zPosEnd * zPosEnd);
+		float f8 = MathHelper.sqrt(xPosEnd * xPosEnd + yPosEnd * yPosEnd + zPosEnd * zPosEnd);
 		
 		// Changing the starting point here slightly, so it doesn't come out of the center
 		//int distance = 6;	// Increasing this will likely increase the distance
@@ -426,7 +427,7 @@ public class Render_Projectile extends Render
 		GL11.glTranslated((float) x, (float) y, (float) z);	// Adjusted with distance to shooter
 		GL11.glRotatef((float) (-Math.atan2((double) zPosEnd, (double) xPosEnd)) * 180.0F / (float) Math.PI - 90.0F, 0.0F, 1.0F, 0.0F);
 		GL11.glRotatef((float) (-Math.atan2((double) f7, (double) yPosEnd)) * 180.0F / (float) Math.PI - 90.0F, 1.0F, 0.0F, 0.0F);
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
 		
 		//Makes the beam look nice
 		RenderHelper.disableStandardItemLighting();
@@ -437,10 +438,10 @@ public class Render_Projectile extends Render
 
 		//from what i can tell f9 and f10 make the beam change (looks like its rotating or whatnot)
 		float f9 = 0.0F - ((float) entity.ticksExisted + tick) * 0.01F;
-		float f10 = MathHelper.sqrt_float(xPosEnd * xPosEnd + yPosEnd * yPosEnd + zPosEnd * zPosEnd) / 32.0F - ((float) entity.ticksExisted + tick) * 0.01F;
+		float f10 = MathHelper.sqrt(xPosEnd * xPosEnd + yPosEnd * yPosEnd + zPosEnd * zPosEnd) / 32.0F - ((float) entity.ticksExisted + tick) * 0.01F;
 
 		// change draw mode
-		tessellator.startDrawing(5);
+		//tessellator.startDrawing(5);
 		byte b0 = 8;	// how many sides the circle has?
 		
 		//float beamWidth = 0.15f;
@@ -450,10 +451,10 @@ public class Render_Projectile extends Render
 	        float f11 = MathHelper.sin((float) (i % b0) * (float) Math.PI * 2.0F / (float) b0) * beamWidth;		// "changing the 2 or .75 should change size of circle"
 	        float f12 = MathHelper.cos((float) (i % b0) * (float) Math.PI * 2.0F / (float) b0) * beamWidth;		// The 2 seems to be there to describe a full circle
 	        float f13 = (float) (i % b0) * 1.0F / (float) b0;												// 1 makes it a half circle
-	        tessellator.setColorOpaque_I(0);
-	        tessellator.addVertexWithUV((double) (f11 * 0.2F), (double) (f12 * 0.2F), 0.0D, (double) f13, (double) f10);	// Now how do I shorten the beam slightly
-	        tessellator.setColorOpaque_I(16777215);																			// so it doesn't appear from the center of the shooter
-	        tessellator.addVertexWithUV((double) f11, (double) f12, (double) f8, (double) f13, (double) f9);				
+	        //tessellator.setColorOpaque_I(0);
+	        //tessellator.addVertexWithUV((double) (f11 * 0.2F), (double) (f12 * 0.2F), 0.0D, (double) f13, (double) f10);	// Now how do I shorten the beam slightly
+	        //tessellator.setColorOpaque_I(16777215);																			// so it doesn't appear from the center of the shooter
+	        //tessellator.addVertexWithUV((double) f11, (double) f12, (double) f8, (double) f13, (double) f9);				
 		}
 		
 		tessellator.draw();	// draw added vertices
@@ -466,3 +467,4 @@ public class Render_Projectile extends Render
     	GL11.glPopMatrix();
     }
 }
+*/

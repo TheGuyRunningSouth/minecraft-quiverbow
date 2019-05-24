@@ -6,12 +6,14 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.ShotPotion;
 import com.domochevsky.quiverbow.net.NetHelper;
 
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.MobEffects;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpawnData
@@ -41,10 +43,10 @@ public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpaw
         this.ownerZ = entity.posZ;
     }
 	
-	
+	// TODO: FIgure this out
 	public void doSetup(Entity entity, Entity target, float setYaw, float setPitch)	// Default setup for all shot projectiles
 	{
-		this.renderDistanceWeight = 10.0D;
+		this.setRenderDistanceWeight(10.0D);
 		if (entity instanceof EntityLivingBase) { this.shootingEntity = (EntityLivingBase) entity; }
 
         Helper.setThrownPickup(this.shootingEntity, this);	// Taking care of pickupability
@@ -58,13 +60,13 @@ public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpaw
         
         this.setPosition(this.posX, this.posY, this.posZ);
         
-        this.yOffset = 0.0F;
+        //this.yOffset = 0.0F;
         
         this.motionX = (double) (-MathHelper.sin(this.rotationYaw / 180.0F * (float) Math.PI) * MathHelper.cos(this.rotationPitch / 180.0F * (float)Math.PI));
         this.motionZ = (double) (MathHelper.cos(this.rotationYaw / 180.0F * (float) Math.PI) * MathHelper.cos(this.rotationPitch / 180.0F * (float)Math.PI));
         this.motionY = (double) (-MathHelper.sin((this.rotationPitch) / 180.0F * (float) Math.PI));
         
-        this.setThrowableHeading(this.motionX, this.motionY, this.motionZ, 0, 1.0F);
+        //this.setThrowableHeading(this.motionX, this.motionY, this.motionZ, 0, 1.0F);
 	}
 	
 	
@@ -77,12 +79,12 @@ public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpaw
 	{
 		if (this.ticksExisted > this.ticksInAirMax) { this.setDead(); }	// There's only so long we can exist
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 10, (byte) 10);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 10, (byte) 10);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition movPos) 
+	public void onImpact(RayTraceResult movPos) 
 	{
 		if (movPos.entityHit != null) 		// We hit a living thing!
     	{		
@@ -94,7 +96,7 @@ public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpaw
 	            {
 	            	ShotPotion pot1 = new ShotPotion();
 		            
-		            pot1.potion = Potion.wither;
+		            pot1.potion = MobEffects.WITHER;
 		            pot1.Strength = 3;
 		            pot1.Duration = 20;
 		            
@@ -114,7 +116,7 @@ public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpaw
 		            
 		            ShotPotion pot1 = new ShotPotion();
 		            
-		            pot1.potion = Potion.regeneration;
+		            pot1.potion = MobEffects.REGENERATION;
 		            pot1.Strength = 3;
 		            pot1.Duration = 20;
 		            
@@ -125,8 +127,8 @@ public class HealthBeam extends _ProjectileBase implements IEntityAdditionalSpaw
 		// else, hit the terrain
     	
 		// SFX
-    	this.worldObj.playSoundAtEntity(this, "random.fizz", 0.7F, 1.5F);
-    	NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 10, (byte) 7);
+    	this.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.7F, 1.5F);
+    	NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 10, (byte) 7);
     	
     	this.setDead();		// We've hit something, so begone with the projectile
 	}

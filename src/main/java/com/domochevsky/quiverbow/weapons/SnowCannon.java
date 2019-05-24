@@ -2,13 +2,20 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.MobEffects;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -17,10 +24,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ShotPotion;
 import com.domochevsky.quiverbow.projectiles.SnowShot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class SnowCannon extends _WeaponBase
 {
@@ -33,7 +40,7 @@ public class SnowCannon extends _WeaponBase
 	private int Slow_Strength;		// -15% speed per level. Lvl 3 = -45%
 	private int Slow_Duration;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -41,16 +48,18 @@ public class SnowCannon extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/SnowCannon");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/SnowCannon_Empty");
 	}
+	*/
 
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -62,7 +71,7 @@ public class SnowCannon extends _WeaponBase
 		Helper.knockUserBack(entity, this.Kickback);			// Kickback
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		entity.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 0.5F);
 
 		this.setCooldown(stack, this.Cooldown);	// Cooling down now
 
@@ -96,40 +105,40 @@ public class SnowCannon extends _WeaponBase
 
 		ShotPotion effect = new ShotPotion();
 
-		effect.potion = Potion.moveSlowdown;
+		effect.potion = MobEffects.SLOWNESS;
 		effect.Strength = this.Slow_Strength;
 		effect.Duration = this.Slow_Duration;
 
 		snow.pot1 = effect;
 
-		world.spawnEntityInWorld(snow);
+		world.spawnEntity(snow);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Snow: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Snow: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Snow: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Snow: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per Snowball");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per Snowball");
 
-		list.add(EnumChatFormatting.GREEN + "Scatter 4 when firing.");
-		list.add(EnumChatFormatting.GREEN + "Slowness " + this.Slow_Strength + " for " + this.displayInSec(this.Slow_Duration) + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Scatter 4 when firing.");
+		list.add(TextFormatting.GREEN + "Slowness " + this.Slow_Strength + " for " + this.displayInSec(this.Slow_Duration) + " sec on hit.");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
 
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Snow Blocks to reload.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Snow Blocks to reload.");
 
 		list.add("Hoarfrost is forming around the trigger.");
 	}
@@ -161,17 +170,17 @@ public class SnowCannon extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One redstone sprayer (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxz", "zbz", "aya",
-					'x', Blocks.piston,
-					'y', Blocks.tripwire_hook,
-					'z', Blocks.wool,
-					'a', Blocks.obsidian,
-					'b', Blocks.sticky_piston
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxz", "zbz", "aya",
+					'x', Blocks.PISTON,
+					'y', Blocks.TRIPWIRE_HOOK,
+					'z', Blocks.WOOL,
+					'a', Blocks.OBSIDIAN,
+					'b', Blocks.STICKY_PISTON
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
-		ItemStack stack = new ItemStack(Blocks.snow);
+		ItemStack stack = new ItemStack(Blocks.SNOW);
 
 		Helper.makeAmmoRecipe(stack, 1, 4, this.getMaxDamage(), this);
 		Helper.makeAmmoRecipe(stack, 2, 8, this.getMaxDamage(), this);

@@ -7,8 +7,8 @@ import com.domochevsky.quiverbow.net.NetHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 public class ColdIron extends _ProjectileBase
@@ -35,13 +35,13 @@ public class ColdIron extends _ProjectileBase
 		// Doing our own (reduced) gravity
 		this.motionY -= 0.025;	// Default is 0.05
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 5, (byte) 1);
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 1, (byte) 2);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 5, (byte) 1);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 1, (byte) 2);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 		// We hit a living thing!
     	{    		
@@ -61,7 +61,7 @@ public class ColdIron extends _ProjectileBase
 			// Knockback
             if (this.knockbackStrength > 0)
             {
-                float velocity = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
+                float velocity = MathHelper.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
                 if (velocity > 0.0F)
                 {
                 	target.entityHit.addVelocity(this.motionX * (double) this.knockbackStrength * 0.6000000238418579D / (double)velocity, 
@@ -78,7 +78,7 @@ public class ColdIron extends _ProjectileBase
     	else	// Hit the terrain
     	{
 			// Glass breaking, 3 layers
-    		if (Helper.tryBlockBreak(this.worldObj, this, target, 1) && this.targetsHit < 3) { this.targetsHit += 1; }
+    		if (Helper.tryBlockBreak(this.world, this, target, 1) && this.targetsHit < 3) { this.targetsHit += 1; }
             else { this.setDead(); }	// Going straight through glass, up to twice
     	}
 	}

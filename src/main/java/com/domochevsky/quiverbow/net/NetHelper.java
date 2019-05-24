@@ -5,12 +5,12 @@ import java.util.List;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.world.World;
 
-import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
+// import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 
 public class NetHelper 
 {    
@@ -64,7 +64,7 @@ public class NetHelper
 	public static void sendPositionMessageToPlayersInRange(World world, Entity entity, double x, double y, double z)
 	{
 		if (world.isRemote) { return; }	// Server-use only
-		AxisAlignedBB box = entity.boundingBox.expand(64, 64, 64);	
+		AxisAlignedBB box = entity.getEntityBoundingBox().expand(64, 64, 64);	
 		List list = world.getEntitiesWithinAABBExcludingEntity(entity, box);
 		
 		int counter = 0;
@@ -104,13 +104,13 @@ public class NetHelper
 		}
 	}
 	
-	
+	/*
 	public static void sendTurretStateMessageToPlayersInRange(World world, Entity_AA turret, boolean hasArmor, boolean hasWeaponUpgrade, boolean hasRidingUpgrade, boolean hasPlatingUpgrade, boolean hasComUpgrade)
 	{
 		// Step 1, who's in range?
 		if (world.isRemote) { return; }	// Server-use only
 		
-		AxisAlignedBB box = turret.boundingBox.expand(64, 64, 64);	
+		AxisAlignedBB box = turret.getEntityBoundingBox().expand(64, 64, 64);	
 		List list = world.getEntitiesWithinAABBExcludingEntity(turret, box);
 		
 		int counter = 0;
@@ -128,14 +128,14 @@ public class NetHelper
 			counter += 1;
 		}
 	}
-	
-	
+	*/
+	/*
 	public static void sendTurretInventoryMessageToPlayersInRange(World world, Entity_AA turret, int itemID, int itemSlot, int metadata)
 	{
 		// Step 1, who's in range?
 		if (world.isRemote) { return; }	// Server-use only
 		
-		AxisAlignedBB box = turret.boundingBox.expand(64, 64, 64);	
+		AxisAlignedBB box = turret.getEntityBoundingBox().expand(64, 64, 64);	
 		List list = world.getEntitiesWithinAABBExcludingEntity(turret, box);
 		
 		int counter = 0;
@@ -153,7 +153,7 @@ public class NetHelper
 			counter += 1;
 		}
 	}
-	
+	*/
 	
 	// Informing the client about a state change
 	private static void sendTurretStateMessageToPlayer(EntityPlayer player, int turretEntityID, boolean hasArmor, boolean hasWeaponUpgrade, boolean hasRidingUpgrade, boolean hasPlatingUpgrade, boolean hasComUpgrade)

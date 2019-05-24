@@ -2,9 +2,10 @@ package com.domochevsky.quiverbow.projectiles;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -25,7 +26,7 @@ public class Sabot_Rocket extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)	// Server-side
+	public void onImpact(RayTraceResult target)	// Server-side
 	{
 		if (target.entityHit != null) 	// Hit a entity
     	{
@@ -35,7 +36,7 @@ public class Sabot_Rocket extends _ProjectileBase
     	else	// Hit the terrain
     	{
 			// Glass breaking
-    		Helper.tryBlockBreak(this.worldObj, this, target, 1);
+    		Helper.tryBlockBreak(this.world, this, target, 1);
     	}
 
 		// Spawning a rose of rockets here
@@ -49,8 +50,8 @@ public class Sabot_Rocket extends _ProjectileBase
 		this.fireRocket(-135.0f, 45.0f);
     	
     	// SFX
-        this.worldObj.playSoundAtEntity(this, "random.break", 1.0F, 3.0F);
-        NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 11, (byte) 4);
+        this.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 3.0F);
+        NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 11, (byte) 4);
        
         this.setDead();		// We've hit something, so begone with the projectile
 	}
@@ -58,37 +59,37 @@ public class Sabot_Rocket extends _ProjectileBase
 	
 	private void fireRocket(float accHor, float accVert)
 	{
-		SmallRocket arrow = new SmallRocket(this.worldObj, this, (this.speed / 3), accHor, accVert);	// Half speed
+		SmallRocket arrow = new SmallRocket(this.world, this, (this.speed / 3), accHor, accVert);	// Half speed
     	
 		arrow.damage = this.damage;
     	arrow.fireDuration = this.fireDuration;
     	arrow.explosionSize = this.explosionSize;
     	arrow.shootingEntity = this.shootingEntity;
     	
-    	this.worldObj.spawnEntityInWorld(arrow);
+    	this.world.spawnEntity(arrow);
 	}
 	
 	
 	@Override
     public boolean attackEntityFrom(DamageSource source, float par2) // Big rockets can be swatted out of the way with a bit of expertise
     {
-    	if (this.isEntityInvulnerable()) { return false; }
+    	if (this.getIsInvulnerable()) { return false; }
         else	// Not invulnerable
         {
-            this.setBeenAttacked();
+            //this.setBeenAttacked();
 
-            if (source.getEntity() != null) 	// Damaged by a entity
+            if (source.getTrueSource() instanceof EntityLivingBase) 	// Damaged by a entity
             {
-                Vec3 vec3 = source.getEntity().getLookVec();	// Which is looking that way...
+                Vec3d vec3 = source.getTrueSource().getLookVec();	// Which is looking that way...
 
                 if (vec3 != null) 
                 {
-                    this.motionX = vec3.xCoord;
-                    this.motionY = vec3.yCoord;
-                    this.motionZ = vec3.zCoord;
+                    this.motionX = vec3.x;
+                    this.motionY = vec3.y;
+                    this.motionZ = vec3.z;
                 }
 
-                if (source.getEntity() instanceof EntityLivingBase) { this.shootingEntity = (EntityLivingBase)source.getEntity(); }
+                if (source.getTrueSource() instanceof EntityLivingBase) { this.shootingEntity = (EntityLivingBase)source.getTrueSource(); }
 
                 return true;
             }

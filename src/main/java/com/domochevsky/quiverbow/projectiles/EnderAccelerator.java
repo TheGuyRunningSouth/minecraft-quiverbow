@@ -3,12 +3,12 @@ package com.domochevsky.quiverbow.projectiles;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.net.NetHelper;
 
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
 public class EnderAccelerator extends _ProjectileBase implements IEntityAdditionalSpawnData
 {
@@ -37,17 +37,17 @@ public class EnderAccelerator extends _ProjectileBase implements IEntityAddition
 	{
 		if (this.ticksExisted > this.ticksInAirMax) // There's only so long we can exist
 		{ 
-			this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, 8.0f, damageTerrain);	// Ripping itself apart
+			this.world.createExplosion(this, this.posX, this.posY, this.posZ, 8.0f, damageTerrain);	// Ripping itself apart
 			this.setDead(); 
 		}	
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 1, (byte) 4);
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 7, (byte) 4);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 1, (byte) 4);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 7, (byte) 4);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 		// We hit a living thing!
     	{		
@@ -56,10 +56,10 @@ public class EnderAccelerator extends _ProjectileBase implements IEntityAddition
             target.entityHit.hurtResistantTime = 0;	// No immunity frames
         }
 		
-		this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, this.explosionSize, damageTerrain);	// Big baddaboom
+		this.world.createExplosion(this, this.posX, this.posY, this.posZ, this.explosionSize, damageTerrain);	// Big baddaboom
 		
 		// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 1, (byte) 8);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 1, (byte) 8);
 		
 		this.setDead();	// No matter what, we're done here
 	}

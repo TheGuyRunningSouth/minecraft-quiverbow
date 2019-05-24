@@ -2,13 +2,20 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -17,10 +24,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.net.NetHelper;
 import com.domochevsky.quiverbow.projectiles.EnderShot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class EnderRifle extends _WeaponBase
 {
@@ -33,23 +40,24 @@ public class EnderRifle extends _WeaponBase
 	private double DmgIncrease;
 
 
-	@SideOnly(Side.CLIENT)
+	/*@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
 	{
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/EnderRifle");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/EnderRifle_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -69,10 +77,10 @@ public class EnderRifle extends _WeaponBase
 
 		shot.knockbackStrength = this.Knockback;
 
-		world.spawnEntityInWorld(shot); 			// Pew.
+		world.spawnEntity(shot); 			// Pew.
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		world.playSound(null, entity.posX,entity.posY, entity.posZ, SoundEvents.BLOCK_STONE_BREAK, SoundCategory.BLOCKS, 1.0F, 0.5F);
 		NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 3, (byte) 1);	// smoke
 
 		this.consumeAmmo(stack, entity, 1);
@@ -97,33 +105,33 @@ public class EnderRifle extends _WeaponBase
 	@Override
 	void doCooldownSFX(World world, Entity entity)
 	{
-		world.playSoundAtEntity(entity, "random.click", 0.7F, 0.2F);
+		//world.playSoundAtEntity(entity, "random.click", 0.7F, 0.2F);
 		NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 3, (byte) 1);	// smoke
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Iron: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Iron: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Iron: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Iron: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
-		list.add(EnumChatFormatting.GREEN + "Knockback " + this.Knockback + " on hit.");
-		list.add(EnumChatFormatting.GREEN + "Deals more damage the longer it travels.");
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
-		list.add(EnumChatFormatting.YELLOW + "Crouch to zoom.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Iron Ingots to reload.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
+		list.add(TextFormatting.GREEN + "Knockback " + this.Knockback + " on hit.");
+		list.add(TextFormatting.GREEN + "Deals more damage the longer it travels.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.YELLOW + "Crouch to zoom.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Iron Ingots to reload.");
 		list.add("An ender-eye scope is attached.");
 		list.add("It's staring at you.");
 	}
@@ -158,19 +166,19 @@ public class EnderRifle extends _WeaponBase
 	{
 		if (this.Enabled)
 		{
-			// One ender rifle (empty)
+			/*// One ender rifle (empty)
 			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "aza", "bcy", "xzx",
-					'x', Blocks.obsidian,
-					'y', Blocks.tripwire_hook,
-					'z', Items.iron_ingot,
-					'a', Items.ender_eye,
-					'b', Blocks.piston,
-					'c', Blocks.sticky_piston
-					);
+					'x', Blocks.OBSIDIAN,
+					'y', Blocks.TRIPWIRE_HOOK,
+					'z', Items.IRON_INGOT,
+					'a', Items.ENDER_EYE,
+					'b', Blocks.PISTON,
+					'c', Blocks.STICKY_PISTON
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
-		ItemStack stack = new ItemStack(Items.iron_ingot);
+		ItemStack stack = new ItemStack(Items.IRON_INGOT);
 
 		Helper.makeAmmoRecipe(stack, 1, 1, this.getMaxDamage(), this);
 		Helper.makeAmmoRecipe(stack, 2, 2, this.getMaxDamage(), this);

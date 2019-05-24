@@ -1,3 +1,4 @@
+/*
 package com.domochevsky.quiverbow.Renderer;
 
 import net.minecraft.client.renderer.entity.RenderLiving;
@@ -111,3 +112,4 @@ public class Render_FlyingAA extends RenderLiving
 		}
 	}
 }
+*/

@@ -2,14 +2,19 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -17,22 +22,22 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.projectiles.WebShot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class SilkenSpinner extends _WeaponBase
 {
 	public SilkenSpinner()
 	{
 		super(8);
-		this.setCreativeTab(CreativeTabs.tabTools);		// This is a tool
+		this.setCreativeTab(CreativeTabs.TOOLS);		// This is a tool
 	}
 
 	private String nameInternal = "Silken Spinner";
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -40,16 +45,17 @@ public class SilkenSpinner extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/WebGun");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/WebGun_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -59,11 +65,11 @@ public class SilkenSpinner extends _WeaponBase
 		if (this.getCooldown(stack) > 0) { return; }	// Hasn't cooled down yet
 
 		// SFX
-		world.playSoundAtEntity(entity, "tile.piston.out", 1.0F, 2.0F);
+		//world.playSoundAtEntity(entity, "tile.piston.out", 1.0F, 2.0F);
 
 		// Firing
 		WebShot projectile = new WebShot(world, entity, (float) this.Speed);
-		world.spawnEntityInWorld(projectile); 			// Firing!
+		world.spawnEntity(projectile); 			// Firing!
 
 		this.consumeAmmo(stack, entity, 1);
 		this.setCooldown(stack, this.Cooldown);
@@ -72,25 +78,25 @@ public class SilkenSpinner extends _WeaponBase
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Webs: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Webs: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Webs: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Webs: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.GREEN + "Places cobweb on hit.");
+		list.add(TextFormatting.GREEN + "Places cobweb on hit.");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
 
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Cobwebs to reload.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Cobwebs to reload.");
 
 		list.add("Feels vaguely sticky.");
 	}
@@ -115,24 +121,24 @@ public class SilkenSpinner extends _WeaponBase
 	{
 		if (this.Enabled)
 		{
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ihi", "gpg", "tsi",
-					'p', Blocks.piston,
-					's', Blocks.sticky_piston,
-					't', Blocks.tripwire_hook,
-					'i', Items.iron_ingot,
-					'h', Blocks.hopper,
-					'g', Blocks.glass_pane
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ihi", "gpg", "tsi",
+					'p', Blocks.PISTON,
+					's', Blocks.STICKY_PISTON,
+					't', Blocks.TRIPWIRE_HOOK,
+					'i', Items.IRON_INGOT,
+					'h', Blocks.HOPPER,
+					'g', Blocks.GLASS_PANE
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
 		// Making web out of string
-		GameRegistry.addRecipe(new ItemStack(Blocks.web), "s s", " s ", "s s",
-				's', Items.string
-				);
+		/*GameRegistry.addRecipe(new ItemStack(Blocks.web), "s s", " s ", "s s",
+				's', Items.STRING
+				);*/
 
 		// Ammo
-		ItemStack stack = new ItemStack(Blocks.web);
+		ItemStack stack = new ItemStack(Blocks.WEB);
 
 		Helper.makeAmmoRecipe(stack, 1, 1, this.getMaxDamage(), this);
 		Helper.makeAmmoRecipe(stack, 2, 2, this.getMaxDamage(), this);

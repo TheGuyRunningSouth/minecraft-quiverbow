@@ -2,22 +2,29 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 
-@cpw.mods.fml.common.Optional.Interface(modid = "battlegear2", iface = "mods.battlegear2.api.IUsableItem", striprefs = true)
+//@cpw.mods.fml.common.Optional.Interface(modid = "battlegear2", iface = "mods.battlegear2.api.IUsableItem", striprefs = true)
 public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableItem
 {
     	public String uniqueName = "WEAPON BASE";				// To be identified by
@@ -38,14 +45,14 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 	public int Cooldown;
 
 	public boolean isMobUsable;	// Default
-
+/*
 	// Icons
 	@SideOnly(Side.CLIENT)
 	public IIcon Icon;
 
 	@SideOnly(Side.CLIENT)
 	public IIcon Icon_Empty;
-
+*/
 
 	public _WeaponBase(int maxAmmo)
 	{
@@ -53,7 +60,7 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 		this.setMaxDamage(maxAmmo);					// Default is 0
 		this.setHasSubtypes(true);					// Got a subtype, since we're using damage values
 		this.setFull3D();							// Not as thin as paper when held. Probably not relevant when using models
-		this.setCreativeTab(CreativeTabs.tabCombat);// On the combat tab by default, since this is a weapon
+		this.setCreativeTab(CreativeTabs.COMBAT);// On the combat tab by default, since this is a weapon
 	}
 
 
@@ -65,13 +72,13 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 	}
 
 
-	@Override
-	@SideOnly(Side.CLIENT)
-	public IIcon getIconFromDamage(int meta)	// This is for inventory display. Comes in with metadata. Only gets called on client side
+	//@Override
+	//@SideOnly(Side.CLIENT)
+	/*public ResourceLocation getIconFromDamage(int meta)	// This is for inventory display. Comes in with metadata. Only gets called on client side
 	{
 		if (meta == this.getMaxDamage()) { return this.Icon_Empty; }	// Empty
 		return this.Icon; 	// Full, default
-	}
+	}*/
 
 
 	public int getMaxCooldown() { return this.Cooldown; }		// For QuiverMob (so they know how long to wait before trying again)
@@ -122,7 +129,7 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 	void setBurstFire(ItemStack stack, int amount)	// Setting our burst fire to this amount. Assumes the tag to be valid
 	{
 		if (stack.getTagCompound() == null) { stack.setTagCompound(new NBTTagCompound()); }	// Init
-		stack.stackTagCompound.setInteger("burstFireLeft", amount);
+		stack.getTagCompound().setInteger("burstFireLeft", amount);
 	}
 
 
@@ -131,18 +138,19 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 		if (stack == null) { return 0; }			// Not a valid item
 		if (!stack.hasTagCompound()) { return 0; }	// Doesn't have a tag
 
-		return stack.stackTagCompound.getInteger("burstFireLeft");
+		return stack.getTagCompound().getInteger("burstFireLeft");
 	}
 
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -178,10 +186,10 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
+	public void getSubItems(CreativeTabs par2CreativeTabs, NonNullList<ItemStack> list) 	// getSubItems
 	{
-		list.add(new ItemStack(item, 1, 0));
-		list.add(new ItemStack(item, 1, this.getMaxDamage()));
+		list.add(new ItemStack(this, 1, 0));
+		list.add(new ItemStack(this, 1, this.getMaxDamage()));
 	}
 	
 
@@ -200,7 +208,7 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 
 
 	@Override
-	public EnumAction getItemUseAction(ItemStack stack) { return EnumAction.bow; }
+	public EnumAction getItemUseAction(ItemStack stack) { return EnumAction.BOW; }
 
 
 	@Override
@@ -223,4 +231,18 @@ public class _WeaponBase extends Item //implements mods.battlegear2.api.IUsableI
 	}
 	
 	public double getFiringSpeed() { return this.firingSpeed; }
-}
+
+
+	public ItemStack onItemRightClick(ItemStack stack, World world, EnumHand hand) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public void onPlayerStoppedUsing(ItemStack stack, World worldIn, EntityLivingBase entityLiving, int timeLeft)
+	 {
+		 super.onPlayerStoppedUsing(stack, worldIn, entityLiving, timeLeft);
+	 }
+ }
+	
+

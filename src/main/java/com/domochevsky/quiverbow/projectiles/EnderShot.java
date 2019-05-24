@@ -5,8 +5,8 @@ import com.domochevsky.quiverbow.net.NetHelper;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 public class EnderShot extends _ProjectileBase
@@ -36,12 +36,12 @@ public class EnderShot extends _ProjectileBase
 		
 		if (this.damage < this.damage_Max) { this.damage += (double) this.damage_Increase; } // Increasing damage once per tick until we reach the max
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 6, (byte) 3);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 6, (byte) 3);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)	// Server-side
+	public void onImpact(RayTraceResult target)	// Server-side
 	{
 		if (target.entityHit != null) 		// We hit a living thing!
     	{		
@@ -50,7 +50,7 @@ public class EnderShot extends _ProjectileBase
             
             if (this.knockbackStrength > 0)
             {
-                float f3 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
+                float f3 = MathHelper.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
                 if (f3 > 0.0F)
                 {
                 	target.entityHit.addVelocity(this.motionX * (double)this.knockbackStrength * 0.6000000238418579D / (double)f3, 
@@ -65,7 +65,7 @@ public class EnderShot extends _ProjectileBase
     	else	// Hit the terrain
     	{
 			// Glass breaking
-    		if (Helper.tryBlockBreak(this.worldObj, this, target, 1) && this.targetsHit < 2) { this.targetsHit += 1; }
+    		if (Helper.tryBlockBreak(this.world, this, target, 1) && this.targetsHit < 2) { this.targetsHit += 1; }
             else { this.setDead(); }	// Going straight through glass
     	}
 	}

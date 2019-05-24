@@ -5,20 +5,23 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-import com.domochevsky.quiverbow.AI.AI_Properties;
-import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
+//import com.domochevsky.quiverbow.AI.AI_Properties;
+//import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
 
 public class Helper_Client 
 {
-	public static String[] PARTICLES;	// Holds the particle effect strings
+	public static EnumParticleTypes PARTICLES;	// Holds the particle effect strings
 	
 	// Used by the particle packet sender
     public static void registerParticles()
     {
-    	PARTICLES = new String[20];
+    	/*
     	PARTICLES[1] = "spell";
     	PARTICLES[2] = "fireworksSpark";
     	PARTICLES[3] = "smoke";
@@ -36,13 +39,14 @@ public class Helper_Client
     	PARTICLES[15] = "slime";
     	PARTICLES[16] = "instantSpell";
     	PARTICLES[17] = "explode";
-    	PARTICLES[18] = "cloud";
+    	PARTICLES[18] = "cloud";*/
     }
     
 	// Only ever called on client side
+    @SideOnly(Side.CLIENT) // I'm making SURE
 	public static void knockUserBackClient(byte strength)
 	{
-		EntityPlayer user = Minecraft.getMinecraft().thePlayer;
+		EntityPlayer user = Minecraft.getMinecraft().player;
 		
 		user.motionZ += -MathHelper.cos((user.rotationYaw) * (float)Math.PI / 180.0F) * (strength * 0.08F);
 		user.motionX += MathHelper.sin((user.rotationYaw) * (float)Math.PI / 180.0F) * (strength * 0.08F);
@@ -56,11 +60,11 @@ public class Helper_Client
 		
 		if (PARTICLES == null) { registerParticles(); } // First time init
 		
-		if (particle >= PARTICLES.length) { return; } // Not a possible particle
+		//if (particle >= PARTICLES.length) { return; } // Not a possible particle
 		
-		if (PARTICLES[particle] == null) { return; } // Not a valid particle
+		//if (PARTICLES[particle] == null) { return; } // Not a valid particle
 		
-		World world = Minecraft.getMinecraft().theWorld;
+		World world = Minecraft.getMinecraft().world;
 		
 		if (world == null) { return; }	// World doesn't exist? oO
 		
@@ -72,13 +76,13 @@ public class Helper_Client
 		
 		while (count < strength)
 		{
-			world.spawnParticle(PARTICLES[particle], 
+			/*world.spawnParticle(PARTICLES[particle], 
 					entity.posX + entity.motionX * (double) count / 4.0D, 
 					entity.posY + entity.motionY * (double) count / 4.0D, 
 					entity.posZ + entity.motionZ * (double) count / 4.0D, 
             		0, 0.2D, 0);
 			
-			count += 1;
+			count += 1;*/
 		}
 	}
 	
@@ -86,7 +90,7 @@ public class Helper_Client
 	// We're guaranteed to be on client side. Updating that entity's position now
 	public static void updateEntityPositionClient(int entityID, double x, double y, double z)
 	{
-		Entity entity = Minecraft.getMinecraft().theWorld.getEntityByID(entityID);
+		Entity entity = Minecraft.getMinecraft().world.getEntityByID(entityID);
 		
 		if (entity == null) { return; }	// Doesn't exist? Shame.
 		
@@ -98,7 +102,8 @@ public class Helper_Client
 	// Informing the client about the fact that my (visual) state has changed
 	public static void setTurretState(int entityID, boolean hasArmor, boolean hasWeaponUpgrade, boolean hasRidingUpgrade, boolean hasPlatingUpgrade, boolean hasCommunicationUpgrade) 
 	{
-		Entity entity = Minecraft.getMinecraft().theWorld.getEntityByID(entityID);
+		/*
+		Entity entity = Minecraft.getMinecraft().world.getEntityByID(entityID);
 		
 		if (entity == null) { return; }	// Doesn't exist? Shame.
 		
@@ -113,13 +118,15 @@ public class Helper_Client
 			turret.hasHeavyPlatingUpgrade = hasPlatingUpgrade;
 			turret.hasCommunicationUpgrade = hasCommunicationUpgrade;
 		}
+		*/
 	}
 	
 	
 	// Informing the client about the fact that my inventory has changed
 	public static void setTurretInventory(int entityID, int itemID, int itemSlot, int metadata) 
 	{
-		Entity entity = Minecraft.getMinecraft().theWorld.getEntityByID(entityID);
+		/*
+		Entity entity = Minecraft.getMinecraft().world.getEntityByID(entityID);
 		
 		if (entity == null) { return; }	// Doesn't exist? Shame.
 		
@@ -140,6 +147,6 @@ public class Helper_Client
 			{
 				turret.storage[itemSlot] = new ItemStack(Item.getItemById(itemID), 1, metadata);	// There ya go. Now the client knows about that too.
 			}
-		}
+		} */
 	}
 }

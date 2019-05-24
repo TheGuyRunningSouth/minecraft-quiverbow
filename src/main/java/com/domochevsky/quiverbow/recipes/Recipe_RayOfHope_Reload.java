@@ -5,8 +5,10 @@ import java.util.List;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapelessRecipes;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.weapons.MediGun;
@@ -18,9 +20,9 @@ public class Recipe_RayOfHope_Reload extends ShapelessRecipes implements IRecipe
 	
 	private int restoreAmount = 0;
 	
-	public Recipe_RayOfHope_Reload(ItemStack result, List components, ItemStack regenPot_1, ItemStack regenPot_2) 
+	public Recipe_RayOfHope_Reload(ItemStack result, NonNullList<Ingredient> components, ItemStack regenPot_1, ItemStack regenPot_2) 
 	{
-		super(result, components);
+		super("QBWeapons", result, components);
 		
 		// Keeping track of what potions I'm looking for
 		this.regenPot_1 = regenPot_1;

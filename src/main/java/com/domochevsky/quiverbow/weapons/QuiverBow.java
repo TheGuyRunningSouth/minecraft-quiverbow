@@ -2,14 +2,21 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.entity.projectile.EntityArrow.PickupStatus;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
@@ -19,11 +26,12 @@ import net.minecraftforge.event.entity.player.ArrowNockEvent;
 import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ammo.ArrowBundle;
+import com.domochevsky.quiverbow.projectiles.EntityNormalArrow;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class QuiverBow extends _WeaponBase
 {
@@ -33,7 +41,7 @@ public class QuiverBow extends _WeaponBase
 	//public static final String[] bowPullIconNameArray = new String[] {"pulling_0", "pulling_1", "pulling_2"};
 
 	String nameInternal = "Bow with Quiver";
-
+/*
 	@SideOnly(Side.CLIENT)
 	private IIcon pull_0;
 
@@ -87,19 +95,20 @@ public class QuiverBow extends _WeaponBase
 
 		return this.itemIcon;
 	}
-
+*/
 
 	@Override
-	public void onPlayerStoppedUsing(ItemStack stack, World par2World, EntityPlayer par3EntityPlayer, int par4)
+	public void onPlayerStoppedUsing(ItemStack stack, World par2World, EntityLivingBase entity, int par4)
 	{
+		EntityPlayer player = (EntityPlayer)entity;
 		if (!par2World.isRemote)
 		{
 			int j = this.getMaxItemUseDuration(stack) - par4;		// Reduces the durability by the ItemInUseCount (probably 1 for anything that isn't a tool)
 
-			ArrowLooseEvent event = new ArrowLooseEvent(par3EntityPlayer, stack, j);
+			ArrowLooseEvent event = new ArrowLooseEvent(player, stack, par2World, j, true);
 			MinecraftForge.EVENT_BUS.post(event);
 			if (event.isCanceled()) { return; }
-			j = event.charge;
+			j = event.getCharge();
 
 			if (this.getDamage(stack) == this.getMaxDamage()) {	return; }		// No arrows in the quiver? Getting out of here early
 
@@ -109,35 +118,37 @@ public class QuiverBow extends _WeaponBase
 			if (f < 0.1D) { return; }
 			if (f > 1.0F) { f = 1.0F; }
 
-			EntityArrow entityarrow = new EntityArrow(par2World, par3EntityPlayer, f * 2.0F);
+			EntityArrow entityarrow = new EntityNormalArrow(par2World, player /*,f * 2.0F*/);
 			if (f == 1.0F) { entityarrow.setIsCritical(true); }
 
-			par2World.playSoundAtEntity(par3EntityPlayer, "random.bow", 1.0F, 1.0F / (itemRand.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+			player.playSound(SoundEvents.ENTITY_ARROW_SHOOT, 1.0F, 1.0F / (itemRand.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
 
-			if (par3EntityPlayer.capabilities.isCreativeMode) { entityarrow.canBePickedUp = 0; }
+			if (player.capabilities.isCreativeMode) { entityarrow.pickupStatus = PickupStatus.DISALLOWED; }
 			else
 			{
-				entityarrow.canBePickedUp = 1;
+				entityarrow.pickupStatus = PickupStatus.ALLOWED;
 				stack.setItemDamage(this.getDamage(stack) + 1);		// Reversed. MORE Damage for a shorter durability bar
 			}
 
-			par2World.spawnEntityInWorld(entityarrow);
+			par2World.spawnEntity(entityarrow);
 
 		}
 	}
 
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		ArrowNockEvent event = new ArrowNockEvent(player, stack);
+		ItemStack stack = player.getHeldItem(hand);
+		ArrowNockEvent event = new ArrowNockEvent(player, stack, hand, world, true);
 		MinecraftForge.EVENT_BUS.post(event);
-		if (event.isCanceled()) { return event.result; }
+		if (event.isCanceled()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }
 
 		// Are there any arrows in the quiver?
-		if (this.getDamage(stack) < this.getMaxDamage()) {	player.setItemInUse(stack, this.getMaxItemUseDuration(stack)); }
+		//TODO: What the heck did setItemInUse() *do*?
+		// if (this.getDamage(stack) < this.getMaxDamage()) {	player.setItemInUse(stack, this.getMaxItemUseDuration(stack)); }
 
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -146,26 +157,26 @@ public class QuiverBow extends _WeaponBase
 
 
 	@Override
-	public EnumAction getItemUseAction(ItemStack stack) { return EnumAction.bow; }
+	public EnumAction getItemUseAction(ItemStack stack) { return EnumAction.BOW; }
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Quiver: INFINITE / " + this.getMaxDamage() + " Arrows");
+			list.add(TextFormatting.BLUE + "Quiver: INFINITE / " + this.getMaxDamage() + " Arrows");
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Quiver: " + ammo + " / " + this.getMaxDamage() + " Arrows");
-		}
+			list.add(TextFormatting.BLUE + "Quiver: " + ammo + " / " + this.getMaxDamage() + " Arrows");
+		//}
 
-		list.add(EnumChatFormatting.GREEN + "Holds more Arrows.");
+		list.add(TextFormatting.GREEN + "Holds more Arrows.");
 
 		list.add("Craft with up to 8 arrow bundles to reload.");
 		list.add("A quiver has been sewn to this bow.");
@@ -188,11 +199,11 @@ public class QuiverBow extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One quiverbow with 256 damage value (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxy", "xzy", "zxy",
-					'x', Items.stick,
-					'y', Items.string,
-					'z', Items.leather
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxy", "xzy", "zxy",
+					'x', Items.STICK,
+					'y', Items.STRING,
+					'z', Items.LEATHER
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

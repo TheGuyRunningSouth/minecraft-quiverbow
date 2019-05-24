@@ -6,12 +6,12 @@ import net.minecraft.item.ItemStack;
 import com.domochevsky.quiverbow.weapons.ERA;
 import com.domochevsky.quiverbow.weapons._WeaponBase;
 
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 public class Listener
 {
 	@SubscribeEvent
-	public void ItemCraftedEvent(cpw.mods.fml.common.gameevent.PlayerEvent.ItemCraftedEvent event)
+	public void ItemCraftedEvent(net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemCraftedEvent event)
 	{
 		//System.out.println("[EVENT] Player crafted something.");
 
@@ -19,10 +19,10 @@ public class Listener
 		{
 			ItemStack stack = event.craftMatrix.getStackInSlot(1);
 
-			if (stack != null && stack.stackSize > 1)
+			if (stack != null && stack.getCount() > 1)
 			{
-				stack.stackSize -= 26;
-				if (stack.stackSize <= 0) { event.craftMatrix.setInventorySlotContents(1, null); }	// Nothing left
+				stack.setCount(stack.getCount()-26);
+				if (stack.getCount() <= 0) { event.craftMatrix.setInventorySlotContents(1, null); }	// Nothing left //This is GOING to crash. I know there was an issue with using NULL stacks but I don't remember what it was
 			}
 			// else, nothing in there or only a single rail, meaning this is a repairing event. I'm fine with that
 		}

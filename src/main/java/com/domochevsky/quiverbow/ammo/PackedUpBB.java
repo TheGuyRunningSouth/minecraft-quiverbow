@@ -1,10 +1,12 @@
+/*
 package com.domochevsky.quiverbow.ammo;
 
 import java.util.List;
 
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Main;
@@ -22,9 +24,9 @@ public class PackedUpBB extends _AmmoBase
 	
 	
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean unknown) 
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag) 
 	{
-		list.add(EnumChatFormatting.BLUE + "Use to deploy.");
+		list.add(TextFormatting.BLUE + "Use to deploy.");
 	}
 	
 	
@@ -44,7 +46,7 @@ public class PackedUpBB extends _AmmoBase
 		if (player.capabilities.isCreativeMode) { return true; }	// Not deducting them in creative mode
 	
 		stack.stackSize -= 1;
-		if (stack.stackSize <= 0)	// Used up
+		if (stack.getCount() <= 0)	// Used up
 		{
 			player.setCurrentItemOrArmor(0, null);
 		}
@@ -64,3 +66,4 @@ public class PackedUpBB extends _AmmoBase
 		
 	}
 }
+*/

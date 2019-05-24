@@ -2,32 +2,39 @@ package com.domochevsky.quiverbow.ammo;
 
 import java.util.List;
 
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 public class ObsidianMagazine extends _AmmoBase
 {
+	public String name = "itemObsidianMag";
 	public ObsidianMagazine()
 	{
 		this.setMaxStackSize(1);
 		this.setMaxDamage(16);
-		this.setCreativeTab(CreativeTabs.tabCombat);	// On the combat tab by default, since this is amunition
-		
+		this.setCreativeTab(CreativeTabs.COMBAT);	// On the combat tab by default, since this is amunition
+		this.setRegistryName(name);
 		this.setHasSubtypes(true);
 	}
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	private IIcon Icon;
 	@SideOnly(Side.CLIENT)
@@ -50,53 +57,56 @@ public class ObsidianMagazine extends _AmmoBase
 		
 		return Icon;
     }
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
     {  
-		if (world.isRemote) { return stack; }	// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Not doing this on client side
 		
-		if (stack.getItemDamage() == 0) { return stack; }	// Already fully loaded
+		if (stack.getItemDamage() == 0) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Already fully loaded
 		
 		boolean doSFX = false;
 		
-		Item obs = Item.getItemFromBlock(Blocks.obsidian);
+		Item obs = Item.getItemFromBlock(Blocks.OBSIDIAN);
 		
-		if (player.inventory.hasItem(Items.gunpowder) && player.inventory.hasItem(obs))
+		if (player.inventory.hasItemStack(new ItemStack(Items.GUNPOWDER)) && player.inventory.hasItemStack(new ItemStack(obs)))
 		{
 			int dmg = stack.getItemDamage() - 1;
 			stack.setItemDamage(dmg);
 			
-			player.inventory.consumeInventoryItem(Items.gunpowder);	// We're just grabbing what we need from the inventory
-			player.inventory.consumeInventoryItem(obs);
+			player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.GUNPOWDER))).shrink(1);
+			player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(obs))).shrink(1);
+			// We're just grabbing what we need from the inventory
+			
 			
 			// SFX
 			doSFX = true;
 		}
 		// else, doesn't have what it takes
 		
-		if (doSFX) { world.playSoundAtEntity(player, "random.wood_click", 0.5F, 0.30F); }
+		if (doSFX) { player.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 0.5F, 0.30F); }
 		
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
     }
 	
 	
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean unknown) 
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag) 
 	{
-		list.add(EnumChatFormatting.BLUE + "Splints: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
+		list.add(TextFormatting.BLUE + "Splints: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
 		
-		list.add(EnumChatFormatting.YELLOW + "Use magazine to fill it with");
-		list.add(EnumChatFormatting.YELLOW + "Gunpowder and Obsidian.");
+		list.add(TextFormatting.YELLOW + "Use magazine to fill it with");
+		list.add(TextFormatting.YELLOW + "Gunpowder and Obsidian.");
 		
 		list.add("A loading helper, full of");
 		list.add("obsidian splints.");
 		
-		if (!player.inventory.hasItem(Items.gunpowder)) { list.add(EnumChatFormatting.RED + "You don't have gunpowder."); }
-		if (!player.inventory.hasItem(Item.getItemFromBlock(Blocks.obsidian))) { list.add(EnumChatFormatting.RED + "You don't have obsidian."); }
+		//if (!player.inventory.hasItem(Items.GUNPOWDER)) { list.add(TextFormatting.RED + "You don't have gunpowder."); }
+		//if (!player.inventory.hasItem(Item.getItemFromBlock(Blocks.OBSIDIAN))) { list.add(TextFormatting.RED + "You don't have OBSIDIAN."); }
 		
-		if (player.capabilities.isCreativeMode) { list.add(EnumChatFormatting.RED + "Does not work in creative mode."); }
+		//if (player.capabilities.isCreativeMode) { list.add(TextFormatting.RED + "Does not work in creative mode."); }
 	}
 	
 	@Override
@@ -106,19 +116,19 @@ public class ObsidianMagazine extends _AmmoBase
 	@Override
 	public void addRecipes() 
 	{
-		GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "x x", "x x", "xox",
+		/*GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "x x", "x x", "xox",
 		         'x', Items.iron_ingot, 
-		         'o', Blocks.obsidian
-		 );
+		         'o', Blocks.OBSIDIAN
+		 );*/
 	}
 	
 	
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
+	public void getSubItems(CreativeTabs par2CreativeTabs, NonNullList<ItemStack> list) 	// getSubItems
 	{
-		list.add(new ItemStack(item, 1, 0));
-		list.add(new ItemStack( item, 1, this.getMaxDamage() ));
+		list.add(new ItemStack(this, 1, 0));
+		list.add(new ItemStack(this, 1, this.getMaxDamage()));
 	}
 	
 	

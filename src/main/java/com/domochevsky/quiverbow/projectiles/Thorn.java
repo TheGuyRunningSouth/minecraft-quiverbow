@@ -2,7 +2,7 @@ package com.domochevsky.quiverbow.projectiles;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -27,7 +27,7 @@ public class Thorn extends _ProjectileBase
 	
 
 	@Override
-	public void onImpact(MovingObjectPosition movPos)	// Server-side
+	public void onImpact(RayTraceResult movPos)	// Server-side
 	{
 		if (movPos.entityHit != null) 
     	{
@@ -36,11 +36,11 @@ public class Thorn extends _ProjectileBase
         }
     	else	// Hit the terrain
     	{
-    		Helper.tryBlockBreak(this.worldObj, this, movPos, 1);
+    		Helper.tryBlockBreak(this.world, this, movPos, 1);
     	}
 		
 		// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 13, (byte) 1);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 13, (byte) 1);
 		
         this.setDead();		// We've hit something, so begone with the projectile
 	}

@@ -2,35 +2,42 @@ package com.domochevsky.quiverbow.ammo;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class GatlingAmmo extends _AmmoBase
 {
+	public String name = "itemGatlingAmmo";
 	public GatlingAmmo()
 	{
 		this.setMaxStackSize(1);
 		this.setMaxDamage(200);
-		this.setCreativeTab(CreativeTabs.tabCombat);	// On the combat tab by default, since this is amunition
-		
+		this.setCreativeTab(CreativeTabs.COMBAT);	// On the combat tab by default, since this is amunition
+		this.setRegistryName(name);
 		this.setHasSubtypes(true);
 	}
 	
 	
-	@Override
+/*	@Override
 	String getIconPath() { return "GatlingAmmo"; }
 	
 	
@@ -65,14 +72,15 @@ public class GatlingAmmo extends _AmmoBase
 		
 		return Icon;
     }
-	
+*/	
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
     {  
-		if (world.isRemote) { return stack; }	// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Not doing this on client side
 		
-		if (stack.getItemDamage() == 0) { return stack; }	// Already fully loaded
+		if (stack.getItemDamage() == 0) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Already fully loaded
 		
 		boolean doSFX = false;
 		
@@ -80,16 +88,15 @@ public class GatlingAmmo extends _AmmoBase
 		
 		while (counter > 0)	// Doing it 4 times, to speed that process up a bit
 		{
-			if (player.inventory.hasItem(Items.reeds) && player.inventory.hasItem(Items.stick))
+			if (player.inventory.hasItemStack(new ItemStack(Items.REEDS)) && player.inventory.hasItemStack(new ItemStack(Items.STICK)))
 			{
 				// ...why does this not work? Is it because I'm in creative? Yes, it is. :|
 				int dmg = stack.getItemDamage() - 1;
 				stack.setItemDamage(dmg);
 				
 				//System.out.println("Set ITEM DMG to " + dmg + ".");
-				
-				player.inventory.consumeInventoryItem(Items.reeds);	// We're just grabbing what we need from the inventory
-				player.inventory.consumeInventoryItem(Items.stick);
+				player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.REEDS))).shrink(1);
+				player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.STICK))).shrink(1);
 				
 				// SFX
 				doSFX = true;
@@ -97,40 +104,40 @@ public class GatlingAmmo extends _AmmoBase
 			// else, doesn't have what it takes
 			else
 			{
-				//player.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "[" + this.getItemStackDisplayName(stack) + "] Can't find sticks or sugar canes."));
+				//player.addChatMessage(new ChatComponentText(TextFormatting.RED + "[" + this.getItemStackDisplayName(stack) + "] Can't find sticks or sugar canes."));
 			}
 			
 			counter -= 1;
 		}
 		
-		if (doSFX) { world.playSoundAtEntity(player, "random.wood_click", 0.5F, 1.50F); }
+		if (doSFX) { player.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 0.5F, 1.50F); }
 		
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
     }
 	
 	
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean unknown) 
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag) 
 	{
-		list.add(EnumChatFormatting.BLUE + "Sugar Rods: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
-		list.add(EnumChatFormatting.YELLOW + "Use clip to fill it with Sugar");
-		list.add(EnumChatFormatting.YELLOW + "Canes and Sticks.");
+		list.add(TextFormatting.BLUE + "Sugar Rods: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
+		list.add(TextFormatting.YELLOW + "Use clip to fill it with Sugar");
+		list.add(TextFormatting.YELLOW + "Canes and Sticks.");
 		list.add("A loading helper, full of");
 		list.add("sugar cane-wrapped sticks.");
 		
-		if (!player.inventory.hasItem(Items.reeds))
+		/*if (!player.inventory.hasItem(Items.REEDS))
 		{
-			list.add(EnumChatFormatting.RED + "You don't have sugar canes.");
+			list.add(TextFormatting.RED + "You don't have sugar canes.");
 		}
-		if (!player.inventory.hasItem(Items.stick))
+		if (!player.inventory.hasItem(Items.STICK))
 		{
-			list.add(EnumChatFormatting.RED + "You don't have sticks.");
+			list.add(TextFormatting.RED + "You don't have sticks.");
 		}
 		
 		if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.RED + "Does not work in creative mode.");
-		}
+			list.add(TextFormatting.RED + "Does not work in creative mode.");
+		}*/
 	}
 	
 	@Override
@@ -141,19 +148,19 @@ public class GatlingAmmo extends _AmmoBase
 	public void addRecipes() 
 	{
 		// First, the clip itself (empty)
-		GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "y y", "y y", "yxy",
+		/*GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "y y", "y y", "yxy",
 		         'x', Items.iron_ingot, 
 		         'y', Blocks.planks
-		 );
+		 );*/
 	}
 	
 	
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
+	public void getSubItems(CreativeTabs par2CreativeTabs, NonNullList<ItemStack> list) 	// getSubItems
 	{
-		list.add(new ItemStack(item, 1, 0));
-		list.add(new ItemStack( item, 1, this.getMaxDamage() ));
+		list.add(new ItemStack(this, 1, 0));
+		list.add(new ItemStack(this, 1, this.getMaxDamage()));
 	}
 	
 	

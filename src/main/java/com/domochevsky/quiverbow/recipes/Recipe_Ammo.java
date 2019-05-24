@@ -6,7 +6,9 @@ import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapelessRecipes;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -20,9 +22,9 @@ public class Recipe_Ammo extends ShapelessRecipes implements IRecipe
 	private Item weapon;
 	private int metadata;
 	
-	public Recipe_Ammo(Item ammo, Item weapon, List recipe) 
+	public Recipe_Ammo(Item ammo, Item weapon, NonNullList<Ingredient> recipe) 
 	{
-		super(new ItemStack(weapon), recipe);
+		super("QBWeapons", new ItemStack(weapon), recipe);
 		
 		this.ammo = ammo;
 		this.weapon = weapon;

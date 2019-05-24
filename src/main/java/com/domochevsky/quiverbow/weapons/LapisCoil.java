@@ -2,15 +2,22 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.MobEffects;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -20,10 +27,10 @@ import com.domochevsky.quiverbow.ShotPotion;
 import com.domochevsky.quiverbow.ammo.LapisMagazine;
 import com.domochevsky.quiverbow.projectiles.LapisShot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class LapisCoil extends _WeaponBase
 {
@@ -43,7 +50,7 @@ public class LapisCoil extends _WeaponBase
 	int Hunger_Strength;
 	int Hunger_Duration;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -51,22 +58,23 @@ public class LapisCoil extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/LapisCoil");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/LapisCoil_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -74,25 +82,25 @@ public class LapisCoil extends _WeaponBase
 	public void doSingleFire(ItemStack stack, World world, Entity entity)		// Server side
 	{
 		// SFX
-		world.playSoundAtEntity(entity, "random.wood_click", 1.0F, 0.5F);
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 3.0F);
+		entity.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 1.0F, 0.5F);
+		entity.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 3.0F);
 
 		// Gas
 		ShotPotion effect1 = new ShotPotion();
 
-		effect1.potion = Potion.confusion;	// Nausea
+		effect1.potion = MobEffects.NAUSEA;	// Nausea
 		effect1.Strength = 1;
 		effect1.Duration = this.Nausea_Duration;
 
 		ShotPotion effect2 = new ShotPotion();
 
-		effect2.potion = Potion.hunger;
+		effect2.potion = MobEffects.HUNGER;
 		effect2.Strength = this.Hunger_Strength;
 		effect2.Duration = this.Hunger_Duration;
 
 		ShotPotion effect3 = new ShotPotion();
 
-		effect3.potion = Potion.weakness;
+		effect3.potion = MobEffects.WEAKNESS;
 		effect3.Strength = this.Weakness_Strength;
 		effect3.Duration = this.Weakness_Duration;
 
@@ -111,7 +119,7 @@ public class LapisCoil extends _WeaponBase
 		projectile.pot2 = effect2;
 		projectile.pot3 = effect3;
 
-		world.spawnEntityInWorld(projectile); 		// Firing!
+		world.spawnEntity(projectile); 		// Firing!
 
 		this.setCooldown(stack, 4);	// For visual purposes
 		if (this.consumeAmmo(stack, entity, 1)) { this.dropMagazine(world, stack, entity); }
@@ -132,41 +140,41 @@ public class LapisCoil extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		entityitem.setPickupDelay(10);
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		//world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Lapis: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Lapis: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Lapis: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Lapis: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
 
-		list.add(EnumChatFormatting.GREEN + "Weakness " + this.Weakness_Strength + " for " + this.displayInSec(this.Nausea_Duration) + " sec on hit.");
-		list.add(EnumChatFormatting.GREEN + "Nausea 1 for " + this.displayInSec(this.Nausea_Duration) + " sec on hit.");
-		list.add(EnumChatFormatting.GREEN + "Hunger " + this.Hunger_Strength + " for " + this.displayInSec(this.Hunger_Duration) + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Weakness " + this.Weakness_Strength + " for " + this.displayInSec(this.Nausea_Duration) + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Nausea 1 for " + this.displayInSec(this.Nausea_Duration) + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Hunger " + this.Hunger_Strength + " for " + this.displayInSec(this.Hunger_Duration) + " sec on hit.");
 
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current magazine.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with a Lapis Magazine to reload.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current magazine.");
+		list.add(TextFormatting.YELLOW + "Craft with a Lapis Magazine to reload.");
 
 		list.add("Redstone-powered and highly toxic.");
 		list.add("It's covered in blue dust.");
@@ -200,12 +208,12 @@ public class LapisCoil extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One lapis coil (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "z z", "axa", " y ",
-					'x', Blocks.piston,
-					'y', Blocks.lever,
-					'z', Items.iron_ingot,
-					'a', Items.repeater
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "z z", "axa", " y ",
+					'x', Blocks.PISTON,
+					'y', Blocks.LEVER,
+					'z', Items.IRON_INGOT,
+					'a', Items.REPEATER
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

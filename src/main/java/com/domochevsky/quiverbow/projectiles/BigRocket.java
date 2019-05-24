@@ -4,8 +4,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.net.NetHelper;
@@ -25,7 +25,7 @@ public class BigRocket extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)	// Server-side
+	public void onImpact(RayTraceResult target)	// Server-side
 	{
 		boolean griefing = true;	// Allowed by default
 		
@@ -35,10 +35,10 @@ public class BigRocket extends _ProjectileBase
 		}
 		else
 		{
-			griefing = this.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing");	// Are we allowed to break things?
+			griefing = this.world.getGameRules().getBoolean("mobGriefing");	// Are we allowed to break things?
 		}
 		
-		this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, (float) this.explosionSize, griefing);	// Bewm
+		this.world.createExplosion(this, this.posX, this.posY, this.posZ, (float) this.explosionSize, griefing);	// Bewm
 		
 		this.setDead(); 	// We've hit something, so begone with the projectile
 	}
@@ -59,39 +59,39 @@ public class BigRocket extends _ProjectileBase
 				}
 				else
 				{
-					griefing = this.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing");	// Are we allowed to break things?
+					griefing = this.world.getGameRules().getBoolean("mobGriefing");	// Are we allowed to break things?
 				}
 				
-				this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, (float) this.explosionSize, griefing);	// Bewm
+				this.world.createExplosion(this, this.posX, this.posY, this.posZ, (float) this.explosionSize, griefing);	// Bewm
 				
 				this.setDead(); 	// We've hit something, so begone with the projectile
 			}
 		}
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 2, (byte) 8);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 2, (byte) 8);
 	}
 	
 	
 	@Override
     public boolean attackEntityFrom(DamageSource source, float par2) // Big rockets can be swatted out of the way with a bit of expertise
     {
-    	if (this.isEntityInvulnerable()) { return false; }
+    	if (this.isEntityInvulnerable(source)) { return false; }
         else	// Not invulnerable
         {
-            this.setBeenAttacked();
+            //this.setBeenAttacked();
 
-            if (source.getEntity() != null) 	// Damaged by a entity
+            if (source.getTrueSource() != null) 	// Damaged by a entity
             {
-                Vec3 vec3 = source.getEntity().getLookVec();	// Which is looking that way...
+                Vec3d vec3 = source.getTrueSource().getLookVec();	// Which is looking that way...
 
                 if (vec3 != null) 
                 {
-                    this.motionX = vec3.xCoord;
-                    this.motionY = vec3.yCoord;
-                    this.motionZ = vec3.zCoord;
+                    this.motionX = vec3.x;
+                    this.motionY = vec3.y;
+                    this.motionZ = vec3.z;
                 }
 
-                if (source.getEntity() instanceof EntityLivingBase) { this.shootingEntity = (EntityLivingBase)source.getEntity(); }
+                if (source.getTrueSource() instanceof EntityLivingBase) { this.shootingEntity = (EntityLivingBase)source.getTrueSource(); }
 
                 return true;
             }

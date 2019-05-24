@@ -1,17 +1,16 @@
 package com.domochevsky.quiverbow.Renderer;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.client.IItemRenderer;
-
 import org.lwjgl.opengl.GL11;
 
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.models.EnderNymous_Model;
 
-public class Render_Weapon implements IItemRenderer
+public class Render_Weapon //implements IItemRenderer
 {	
 	byte weaponID;
 	
@@ -33,7 +32,7 @@ public class Render_Weapon implements IItemRenderer
     	tex = new ResourceLocation("quiverchevsky:textures/items/models/" + Main.weapons.get(weaponID).getModelTexPath(stack) + ".png");
     }
     
-	
+	/*
 	@Override
 	public boolean handleRenderType(ItemStack item, ItemRenderType type) 
 	{
@@ -46,8 +45,8 @@ public class Render_Weapon implements IItemRenderer
 	public boolean shouldUseRenderHelper(ItemRenderType type, ItemStack item, ItemRendererHelper helper) { return false; }
 	
 	
-	@Override
-	public void renderItem(ItemRenderType type, ItemStack stack, Object... data) 
+	/*@Override
+	public void renderItem(ItemRenderer type, ItemStack stack, Object... data) 
 	{
 		if (this.dontRender) { return; }	// Not rendering, likely because we don't have a model ready
 		
@@ -56,7 +55,8 @@ public class Render_Weapon implements IItemRenderer
 		// The actual renderer
 		switch (type) 
 		{
-	        case EQUIPPED: 				// render in third person
+	        /*
+	         	case EQUIPPED: 				// render in third person
 	            GL11.glPushMatrix();
 		            GL11.glScalef(scale, scale, scale);
 		            
@@ -142,9 +142,9 @@ public class Render_Weapon implements IItemRenderer
 		            }
 	            GL11.glPopMatrix();
 	        break;
-	
+	        
 	        default:
 	        break;
         }
-	}
+	}*/
 }

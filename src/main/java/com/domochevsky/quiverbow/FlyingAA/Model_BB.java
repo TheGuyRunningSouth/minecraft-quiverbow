@@ -1,4 +1,4 @@
-package com.domochevsky.quiverbow.FlyingAA;
+/*(package com.domochevsky.quiverbow.FlyingAA;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelBase;
@@ -209,7 +209,7 @@ public class Model_BB extends ModelBase
 		this.Bit2.rotateAngleX = pitch / (180F / (float) Math.PI);
 		this.Bit2b.rotateAngleY = yaw / (180F / (float) Math.PI);
 		this.Bit2b.rotateAngleX = pitch / (180F / (float) Math.PI);
-		*/
+		* /
 		
 		if (!Frames.isTickReady()) { return; }	// Ideally this will keep the ring rotating at a steady pace (30 times per second)
 		if (Minecraft.getMinecraft().isGamePaused()) { return; }
@@ -243,3 +243,4 @@ public class Model_BB extends ModelBase
 		if (model.rotateAngleY >= 180.0f) { model.rotateAngleY -= 360.0f; }	// Wrapping around
 	}
 }
+*/

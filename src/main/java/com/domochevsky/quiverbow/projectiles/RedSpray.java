@@ -6,7 +6,9 @@ import com.domochevsky.quiverbow.net.NetHelper;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 public class RedSpray extends _ProjectileBase
@@ -26,12 +28,12 @@ public class RedSpray extends _ProjectileBase
 	@Override
 	public void doFlightSFX() 
 	{
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 10, (byte) 4);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 10, (byte) 4);
 	}
 
 	
 	@Override
-	public void onImpact(MovingObjectPosition movPos) 
+	public void onImpact(RayTraceResult movPos) 
 	{
 		if (movPos.entityHit != null) 		// We hit a living thing!
     	{		
@@ -45,8 +47,8 @@ public class RedSpray extends _ProjectileBase
 		// else, hit the terrain
     	
 		// SFX
-    	this.worldObj.playSoundAtEntity(this, "random.fizz", 0.7F, 1.5F);
-    	this.worldObj.spawnParticle("redstone", this.posX, this.posY + 0.5D, this.posZ, 0.0D, 0.0D, 0.0D);
+    	this.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.7F, 1.5F);
+    	this.world.spawnParticle(EnumParticleTypes.REDSTONE, this.posX, this.posY + 0.5D, this.posZ, 0.0D, 0.0D, 0.0D);
     	
     	this.setDead();		// We've hit something, so begone with the projectile
 	}

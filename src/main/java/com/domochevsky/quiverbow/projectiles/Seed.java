@@ -5,7 +5,8 @@ import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -23,7 +24,7 @@ public class Seed extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 
     	{
@@ -35,24 +36,24 @@ public class Seed extends _ProjectileBase
         else 
         {
         	// Hit the terrain        	
-        	int x = target.blockX;
-    		int y = target.blockY;
-    		int z = target.blockZ;
+        	int x = target.getBlockPos().getX();
+    		int y = target.getBlockPos().getY();
+    		int z = target.getBlockPos().getZ();
     		
-    		Block hitBlock = this.worldObj.getBlock(x, y, z);
-    		Block aboveHitBlock = this.worldObj.getBlock(x, y + 1, z);
+    		Block hitBlock = this.world.getBlockState(new BlockPos(x, y, z)).getBlock();
+    		Block aboveHitBlock = this.world.getBlockState(new BlockPos(x, y + 1, z)).getBlock();
     		
     		// Glass breaking
-    		Helper.tryBlockBreak(this.worldObj, this, target, 0);
+    		Helper.tryBlockBreak(this.world, this, target, 0);
     		
-    		if (hitBlock == Blocks.farmland && aboveHitBlock.getMaterial() == Material.air)
+    		if (hitBlock == Blocks.FARMLAND && aboveHitBlock.getMaterial(this.world.getBlockState(new BlockPos(x,y+1,z))) == Material.AIR)
     		{
     			// Hit a farmland block and the block above is free. Planting a melon seed now
-    			this.worldObj.setBlock(x, y + 1, z, Blocks.melon_stem, 0, 3);
+    			this.world.setBlockState(new BlockPos(x, y + 1, z), Blocks.MELON_STEM.getDefaultState(), 3);
     		}
         }
     	
-        this.worldObj.playSoundAtEntity(this, "random.click", 0.2F, 3.0F);
+        //this.world.playSoundAtEntity(this, "random.click", 0.2F, 3.0F);
         this.setDead();		// We've hit something, so begone with the projectile
 	}
 	

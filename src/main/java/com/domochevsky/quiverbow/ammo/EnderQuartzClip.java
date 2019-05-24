@@ -2,33 +2,40 @@ package com.domochevsky.quiverbow.ammo;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class EnderQuartzClip extends _AmmoBase
 {
+	public String name = "itemQuartzClip";
 	public EnderQuartzClip()
 	{
 		this.setMaxStackSize(1);	// No stacking, since we're filling these up
-		
+		setRegistryName(name);
 		this.setMaxDamage(8);
-		this.setCreativeTab(CreativeTabs.tabCombat);	// On the combat tab by default, since this is amunition
+		this.setCreativeTab(CreativeTabs.COMBAT);	// On the combat tab by default, since this is amunition
 		
 		this.setHasSubtypes(true);
 	}
 	
 	
-	@SideOnly(Side.CLIENT)
+	/*@SideOnly(Side.CLIENT)
 	private IIcon Icon;
 	@SideOnly(Side.CLIENT)
 	private IIcon Icon_Empty;
@@ -50,43 +57,44 @@ public class EnderQuartzClip extends _AmmoBase
 		
 		return Icon;
     }
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
     {  
-		if (world.isRemote) { return stack; }				// Not doing this on client side
-		if (stack.getItemDamage() == 0) { return stack; }	// Already fully loaded
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }				// Not doing this on client side
+		if (stack.getItemDamage() == 0) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Already fully loaded
 		
-		if (player.inventory.hasItem(Items.ender_pearl) && player.inventory.hasItem(Items.quartz))
+		if (player.inventory.hasItemStack(new ItemStack(Items.ENDER_PEARL)) && player.inventory.hasItemStack(new ItemStack(Items.QUARTZ)))
 		{
 			int dmg = stack.getItemDamage() - 1;
 			stack.setItemDamage(dmg);
-			
-			player.inventory.consumeInventoryItem(Items.ender_pearl);	// We're just grabbing what we need from the inventory
-			player.inventory.consumeInventoryItem(Items.quartz);
+			player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.ENDER_PEARL))).shrink(1);
+			// We're just grabbing what we need from the inventory
+			player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.QUARTZ))).shrink(1);
 			
 			// SFX
-			world.playSoundAtEntity(player, "random.wood_click", 0.5F, 0.3F);
+			player.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 0.5F, 0.3F);
 		}
 		// else, doesn't have what it takes
 		
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
     }
 	
 	
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean unknown) 
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag) 
 	{
-		list.add(EnumChatFormatting.BLUE + "Ender Quartz: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
-		list.add(EnumChatFormatting.YELLOW + "Use magazine to fill it with");
-		list.add(EnumChatFormatting.YELLOW + "Ender Pearls and Quartz.");
+		list.add(TextFormatting.BLUE + "Ender Quartz: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
+		list.add(TextFormatting.YELLOW + "Use magazine to fill it with");
+		list.add(TextFormatting.YELLOW + "Ender Pearls and Quartz.");
 		list.add("A clip full of");
 		list.add("quartz-encased ender pearls.");
 		
-		if (!player.inventory.hasItem(Items.ender_pearl)) { list.add(EnumChatFormatting.RED + "You don't have ender pearls."); }
-		if (!player.inventory.hasItem(Items.quartz)) { list.add(EnumChatFormatting.RED + "You don't have quartz."); }
-		if (player.capabilities.isCreativeMode) { list.add(EnumChatFormatting.RED + "Does not work in creative mode."); }
+		//if (!player.inventory.hasItem(Items.ENDER_PEARL)) { list.add(TextFormatting.RED + "You don't have ender pearls."); }
+		//if (!player.inventory.hasItem(Items.QUARTZ)) { list.add(TextFormatting.RED + "You don't have quartz."); }
+		//if (player.capabilities.isCreativeMode) { list.add(TextFormatting.RED + "Does not work in creative mode."); }
 	}
 	
 	
@@ -97,19 +105,18 @@ public class EnderQuartzClip extends _AmmoBase
 	@Override
 	public void addRecipes() 
 	{
-		GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "xxx", "ixi", "iii",
+		/*GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "xxx", "ixi", "iii",
 		         'x', Items.quartz, 
 		         'i', Items.iron_ingot
-		 );
+		 );*/
 	}
 	
 	
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
+	public void getSubItems(CreativeTabs par2CreativeTabs, NonNullList<ItemStack> list) 	// getSubItems
 	{
-		list.add(new ItemStack(item, 1, 0));
-		list.add(new ItemStack( item, 1, this.getMaxDamage() ));
+		list.add(new ItemStack(this, 1, 0));
 	}
 	
 	

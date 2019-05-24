@@ -1,13 +1,15 @@
 package com.domochevsky.quiverbow.AI;
-
+/*
 import java.util.Random;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
@@ -34,7 +36,7 @@ public class AI_Movement
 		
 		if (AI_Targeting.isNameOnWhitelist(turret, Commands.cmdFollowOwner))	// We're instructed to follow the owner, so running after them
 		{
-			EntityPlayer player = turret.worldObj.getPlayerEntityByName(turret.ownerName);
+			EntityPlayer player = turret.world.getPlayerEntityByName(turret.ownerName);
 			
 			//System.out.println("[ARMS ASSISTANT] Set to follow owner. Owner is " + player);
 			
@@ -79,32 +81,32 @@ public class AI_Movement
 	
 	private static void FollowOwner(Entity_AA turret, EntityPlayer owner)
 	{
-		if (turret.getDistanceSqToEntity(owner) < (double) (10.0F * 10.0F)) { return; }	// Still close enough (min distance is 10² blocks)
+		if (turret.getDistanceSq(owner) < (double) (10.0F * 10.0F)) { return; }	// Still close enough (min distance is 10² blocks)
 		
-		if (!turret.getNavigator().noPath() && turret.getDistanceSqToEntity(owner) > (double) (2.0 * 2.0)) { return; }		// Already moving and distance to owner is beyond max 
+		if (!turret.getNavigator().noPath() && turret.getDistanceSq(owner) > (double) (2.0 * 2.0)) { return; }		// Already moving and distance to owner is beyond max 
 		// !this.getNavigator().noPath() &&
 
         if (!turret.getNavigator().tryMoveToEntityLiving(owner, turret.movementSpeed))
         {
-            if (turret.getDistanceSqToEntity(owner) >= 144.0D)
+            if (turret.getDistanceSq(owner) >= 144.0D)
             {
-                int blockPosX = MathHelper.floor_double(owner.posX) - 2;
-                int blockPosY = MathHelper.floor_double(owner.posZ) - 2;
-                int blockPosZ = MathHelper.floor_double(owner.boundingBox.minY);
+                int blockPosX = MathHelper.floor(owner.posX) - 2;
+                int blockPosY = MathHelper.floor(owner.posZ) - 2;
+                int blockPosZ = MathHelper.floor(owner.getEntityBoundingBox().minY);
 
                 for (int counterX = 0; counterX <= 4; ++counterX)
                 {
                     for (int counterY = 0; counterY <= 4; ++counterY)
                     {
                         if ((counterX < 1 || counterY < 1 || counterX > 3 || counterY > 3) && 
-                        		World.doesBlockHaveSolidTopSurface(turret.worldObj, blockPosX + counterX, blockPosZ - 1, blockPosY + counterY) && 
-                        		!turret.worldObj.getBlock(blockPosX + counterX, blockPosZ, blockPosY + counterY).isNormalCube() && 
-                        		!turret.worldObj.getBlock(blockPosX + counterX, blockPosZ + 1, blockPosY + counterY).isNormalCube())
+                        		turret.world.isSideSolid(new BlockPos(blockPosX + counterX, blockPosZ - 1, blockPosY + counterY), EnumFacing.UP) && 
+                        		!turret.world.getBlockState(new BlockPos(blockPosX + counterX, blockPosZ, blockPosY + counterY)).isNormalCube() && 
+                        		!turret.world.getBlockState(new BlockPos(blockPosX + counterX, blockPosZ + 1, blockPosY + counterY)).isNormalCube())
                         {
                         	turret.setLocationAndAngles((double)((float) (blockPosX + counterX) + 0.5F), 
                             		(double)blockPosZ, (double)((float)(blockPosY + counterY) + 0.5F),
                             		turret.rotationYaw, turret.rotationPitch);
-                        	turret.getNavigator().clearPathEntity();
+                        	turret.getNavigator().clearPath();
                             return;
                         }
                     }
@@ -123,19 +125,19 @@ public class AI_Movement
 		
 		//System.out.println("[ARMS ASSISTANT] Trying to wander randomly now.");
 		
-		Vec3 targetPos = findRandomTarget(turret, 10, 7);
+		Vec3d targetPos = findRandomTarget(turret, 10, 7);
 		
 		if (targetPos == null) { return; }	// Didn't get a valid position, I guess
 		
 		//System.out.println("[ARMS ASSISTANT] Got a target position. Going there.");
 		
-		turret.getNavigator().tryMoveToXYZ(targetPos.xCoord, targetPos.yCoord, targetPos.zCoord, turret.movementSpeed);	// Get moving
+		turret.getNavigator().tryMoveToXYZ(targetPos.x, targetPos.y, targetPos.z, turret.movementSpeed);	// Get moving
 	}
 	
 	
-	private static Vec3 findRandomTarget(Entity entity, int distanceXZ, int distanceY)
+	private static Vec3d findRandomTarget(Entity entity, int distanceXZ, int distanceY)
 	{
-		Random random = entity.worldObj.rand;
+		Random random = entity.world.rand;
 		
 		int targetX = 0;
 		int targetY = 0;
@@ -147,16 +149,16 @@ public class AI_Movement
             int rangeY = random.nextInt(2 * distanceY) - distanceY;
             int rangeZ = random.nextInt(2 * distanceXZ) - distanceXZ;
 
-            rangeX += MathHelper.floor_double(entity.posX);
-            rangeY += MathHelper.floor_double(entity.posY);
-            rangeZ += MathHelper.floor_double(entity.posZ);
+            rangeX += MathHelper.floor(entity.posX);
+            rangeY += MathHelper.floor(entity.posY);
+            rangeZ += MathHelper.floor(entity.posZ);
 
             targetX = rangeX;
             targetY = rangeY;
             targetZ = rangeZ;
         }
 
-        return Vec3.createVectorHelper((double)targetX, (double)targetY, (double)targetZ);
+        return new Vec3d((double)targetX, (double)targetY, (double)targetZ);
 	}
 	
 	
@@ -170,15 +172,15 @@ public class AI_Movement
 
         if (distanceSq < 1.0D || distanceSq > 3600.0D)
         {
-            aa.waypointX = aa.posX + (double)((aa.worldObj.rand.nextFloat() * 2.0F - 1.0F) * 16.0F);
-            aa.waypointY = aa.posY + (double)((aa.worldObj.rand.nextFloat() * 2.0F - 1.0F) * 16.0F);
-            aa.waypointZ = aa.posZ + (double)((aa.worldObj.rand.nextFloat() * 2.0F - 1.0F) * 16.0F);
+            aa.waypointX = aa.posX + (double)((aa.world.rand.nextFloat() * 2.0F - 1.0F) * 16.0F);
+            aa.waypointY = aa.posY + (double)((aa.world.rand.nextFloat() * 2.0F - 1.0F) * 16.0F);
+            aa.waypointZ = aa.posZ + (double)((aa.world.rand.nextFloat() * 2.0F - 1.0F) * 16.0F);
         }
 
         if (aa.courseChangeCooldown-- <= 0)	// Idly flying around
         {        	
-            aa.courseChangeCooldown += aa.worldObj.rand.nextInt(5) + 2;
-            distanceSq = (double)MathHelper.sqrt_double(distanceSq);
+            aa.courseChangeCooldown += aa.world.rand.nextInt(5) + 2;
+            distanceSq = (double)MathHelper.sqrt(distanceSq);
 
             if (isCourseTraversable(aa, aa.waypointX, aa.waypointY, aa.waypointZ, distanceSq))
             {            	
@@ -204,13 +206,13 @@ public class AI_Movement
         double d5 = (aa.waypointY - aa.posY) / distanceSq;
         double d6 = (aa.waypointZ - aa.posZ) / distanceSq;
         
-        AxisAlignedBB axisalignedbb = aa.boundingBox.copy();
+        AxisAlignedBB axisalignedbb = aa.getEntityBoundingBox();
 
         for (int i = 1; (double)i < distanceSq; ++i)
         {
             axisalignedbb.offset(d4, d5, d6);
 
-            if (!aa.worldObj.getCollidingBoundingBoxes(aa, axisalignedbb).isEmpty())
+            if (!aa.world.getCollisionBoxes(aa, axisalignedbb).isEmpty())
             {
                 return false;
             }
@@ -223,9 +225,9 @@ public class AI_Movement
 	// Already known to have riding and movement upgrades and being ridden right now
 	private static void doRiding(Entity_AA turret)
 	{
-		if (!(turret.riddenByEntity instanceof EntityLivingBase)) { return; }	// Not ridden by a living thing. Tsk tsk.
+		if (!(turret.getRidingEntity() instanceof EntityLivingBase)) { return; }	// Not ridden by a living thing. Tsk tsk.
 		
-		EntityLivingBase rider = (EntityLivingBase) turret.riddenByEntity;
+		EntityLivingBase rider = (EntityLivingBase) turret.getRidingEntity();
 		
 		// Look where the rider is looking
 		turret.rotationPitch = turret.updateRotation(turret.rotationPitch, rider.rotationPitch, 30.0f);
@@ -248,3 +250,4 @@ public class AI_Movement
     	turret.moveEntityWithHeading(strafe, forward);
 	}
 }
+*/

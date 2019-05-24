@@ -1,22 +1,23 @@
 package com.domochevsky.quiverbow.ammo;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IIcon;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class _AmmoBase extends Item
 {	
+	String name;
 	public _AmmoBase()
 	{
 		this.setMaxStackSize(16);
-		this.setCreativeTab(CreativeTabs.tabCombat);	// On the combat tab by default, since this is amunition
+		this.setCreativeTab(CreativeTabs.COMBAT);	// On the combat tab by default, since this is amunition
+		this.setUnlocalizedName("ammochevsky_" + this.name);
+		//this.setRegistryName(this.name);
 	}
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	private IIcon Icon;
 	
@@ -30,11 +31,11 @@ public class _AmmoBase extends Item
 	
 	@Override
     public IIcon getIconFromDamage(int meta) { return this.Icon; }
-	
+	*/
 	
 	String getIconPath() { return "Unknown"; }
 	
-	
+		
 	@Override
 	public boolean showDurabilityBar(ItemStack stack) { return false; }	// Don't care about durabilities
 	

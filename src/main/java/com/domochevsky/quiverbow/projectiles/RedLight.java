@@ -5,14 +5,16 @@ import io.netty.buffer.ByteBuf;
 import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.net.NetHelper;
 
-import cpw.mods.fml.common.registry.IEntityAdditionalSpawnData;
+import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 public class RedLight extends _ProjectileBase implements IEntityAdditionalSpawnData
@@ -41,13 +43,13 @@ public class RedLight extends _ProjectileBase implements IEntityAdditionalSpawnD
 	{
 		if (this.ticksExisted > this.ticksInAirMax) { this.setDead(); }	// There's only so long we can exist
 		
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 4, (byte) 1);
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 10, (byte) 1);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 4, (byte) 1);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 10, (byte) 1);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 		// We hit a living thing!
     	{		
@@ -57,19 +59,20 @@ public class RedLight extends _ProjectileBase implements IEntityAdditionalSpawnD
             this.targetsHit += 1;					// Punched through one more entity
             
             // Bonus
-            EntityLightningBolt bolt = new EntityLightningBolt(this.worldObj, target.entityHit.posX, target.entityHit.posY, target.entityHit.posZ);
-            this.worldObj.addWeatherEffect(bolt);
+            EntityLightningBolt bolt = new EntityLightningBolt(this.world, target.entityHit.posX, target.entityHit.posY, target.entityHit.posZ, false);
+            this.world.addWeatherEffect(bolt);
         }
 		else
 		{
 			// Let's blast through terrain on hit
 			
-			int x = target.blockX;
-			int y = target.blockY;
-			int z = target.blockZ;
+			int x = target.getBlockPos().getX();
+			int y = target.getBlockPos().getY();
+			int z = target.getBlockPos().getZ();
 			
-			Block toBeBroken = this.worldObj.getBlock(x, y, z);
-			int meta = this.worldObj.getBlockMetadata(x, y, z);
+			IBlockState meta = this.world.getBlockState(new BlockPos(x, y, z));
+			Block toBeBroken = meta.getBlock();
+			
 			
 			boolean breakThis = true;
 			
@@ -91,18 +94,18 @@ public class RedLight extends _ProjectileBase implements IEntityAdditionalSpawnD
 				this.targetsHit += 3;	// Super thick material
 			}
 			
-	    	if (toBeBroken.getMaterial() == Material.water) { breakThis = false; }
+	    	if (toBeBroken.getMaterial(meta) == Material.WATER) { breakThis = false; }
 	    	
-	    	if (toBeBroken == Blocks.water) { breakThis = false; }
-	    	if (toBeBroken == Blocks.flowing_water) { breakThis = false; }
+	    	if (toBeBroken == Blocks.WATER) { breakThis = false; }
+	    	if (toBeBroken == Blocks.FLOWING_WATER) { breakThis = false; }
 	    	
-	    	if (toBeBroken == Blocks.obsidian) 
+	    	if (toBeBroken == Blocks.OBSIDIAN) 
 	    	{ 
 	    		breakThis = false; 
 	    		this.targetsHit += 2;	// Thicker materials
 	    	}
 	    	
-	    	if (toBeBroken == Blocks.iron_block) 
+	    	if (toBeBroken == Blocks.IRON_BLOCK) 
 	    	{ 
 	    		breakThis = false; 
 	    		this.targetsHit += 2;	// Thicker materials
@@ -111,15 +114,15 @@ public class RedLight extends _ProjectileBase implements IEntityAdditionalSpawnD
 	    	if (breakThis)	// Sorted out all blocks we don't want to break. Checking the rest now
 	    	{
 	    		// Glass breaking
-	        	Helper.tryBlockBreak(this.worldObj, this, target, 3);	// Very Strong
+	        	Helper.tryBlockBreak(this.world, this, target, 3);	// Very Strong
 	    	}
 			
 			this.targetsHit += 1;	// Punched through one more block, no matter if we managed to break it
 		}
 		
 		// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 10, (byte) 2);
-		this.worldObj.playSoundAtEntity(this, "ambient.weather.thunder", 0.7F, 0.5F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 10, (byte) 2);
+		//this.world.playSoundAtEntity(this, "ambient.weather.thunder", 0.7F, 0.5F);
 		
 		if (this.targetsHit > this.targetsHitMax) { this.setDead(); }	// Went through the maximum, so ending now
 	}

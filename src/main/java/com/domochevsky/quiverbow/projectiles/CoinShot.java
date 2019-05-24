@@ -5,9 +5,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -37,7 +38,7 @@ public class CoinShot extends _ProjectileBase
 
 	
 	@Override
-	public void onImpact(MovingObjectPosition hitPos)	// Server-side
+	public void onImpact(RayTraceResult hitPos)	// Server-side
 	{
 		if (hitPos.entityHit != null) 
     	{
@@ -48,10 +49,10 @@ public class CoinShot extends _ProjectileBase
         }
         else 
         {        	
-        	Block block = this.worldObj.getBlock(hitPos.blockX, hitPos.blockY, hitPos.blockZ);
+        	Block block = this.world.getBlockState(hitPos.getBlockPos()).getBlock();
 			
         	// Glass breaking
-            Helper.tryBlockBreak(this.worldObj, this, hitPos, 1);
+            Helper.tryBlockBreak(this.world, this, hitPos, 1);
             
             if (this.shootingEntity != null && this.shootingEntity instanceof EntityPlayer)
             {
@@ -59,12 +60,12 @@ public class CoinShot extends _ProjectileBase
             	
             	if (this.shouldDrop && !player.capabilities.isCreativeMode)
             	{            		
-    	        	ItemStack nuggetStack = new ItemStack(Items.gold_nugget);
-    	        	EntityItem entityitem = new EntityItem(this.worldObj, hitPos.blockX, hitPos.blockY + (double)0.5F, hitPos.blockZ, nuggetStack);
-    	            entityitem.delayBeforeCanPickup = 10;
+    	        	ItemStack nuggetStack = new ItemStack(Items.GOLD_NUGGET);
+    	        	EntityItem entityitem = new EntityItem(this.world, hitPos.getBlockPos().getX(), hitPos.getBlockPos().getY() + (double)0.5F, hitPos.getBlockPos().getZ(), nuggetStack);
+    	        	entityitem.setPickupDelay(10);
     	            
     	            if (captureDrops) { capturedDrops.add(entityitem); }
-    	            else { this.worldObj.spawnEntityInWorld(entityitem); }
+    	            else { this.world.spawnEntity(entityitem); }
             	}
             	// else, they're in creative mode, so no dropping nuggets
             }
@@ -72,8 +73,8 @@ public class CoinShot extends _ProjectileBase
         }
     	
     	// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 13, (byte) 1);
-        this.worldObj.playSoundAtEntity(this, "random.break", 1.0F, 3.0F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 13, (byte) 1);
+        this.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 3.0F);
         
         this.setDead();		// We've hit something, so begone with the projectile
 	}

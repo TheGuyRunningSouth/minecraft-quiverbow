@@ -2,14 +2,20 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -18,10 +24,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ammo.SeedJar;
 import com.domochevsky.quiverbow.projectiles.Seed;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class SeedSweeper extends _WeaponBase
 {
@@ -32,7 +38,7 @@ public class SeedSweeper extends _WeaponBase
 	private int Dmg;
 	private float Spread;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -40,22 +46,23 @@ public class SeedSweeper extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/SeedSweeper");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/SeedSweeper_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -65,7 +72,7 @@ public class SeedSweeper extends _WeaponBase
 		if (this.getCooldown(stack) != 0) { return; }	// Hasn't cooled down yet
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.6F, 0.9F);
+		entity.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.6F, 0.9F);
 
 		this.setCooldown(stack, this.Cooldown);	// Cooling down now, no matter what
 
@@ -97,7 +104,7 @@ public class SeedSweeper extends _WeaponBase
 		Seed shot = new Seed(world, entity, (float) this.Speed, spreadHor, spreadVert);
 		shot.damage = this.Dmg;
 
-		world.spawnEntityInWorld(shot); 											// Firing
+		world.spawnEntity(shot); 											// Firing
 	}
 
 
@@ -115,42 +122,42 @@ public class SeedSweeper extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		entityitem.setPickupDelay(10);
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.click", 1.7F, 0.3F);
+		entity.playSound(SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, 1.7F, 0.3F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Seeds: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Seeds: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Seeds: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Seeds: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.Dmg + " per seed.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.Dmg + " per seed.");
 
-		list.add(EnumChatFormatting.GREEN + "Scatter 8 when firing.");
+		list.add(TextFormatting.GREEN + "Scatter 8 when firing.");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
 
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current jar.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with 1 Seed Jar to reload");
-		list.add(EnumChatFormatting.YELLOW + "when empty.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current jar.");
+		list.add(TextFormatting.YELLOW + "Craft with 1 Seed Jar to reload");
+		list.add(TextFormatting.YELLOW + "when empty.");
 
 		list.add("Git off my farm!");
 	}
@@ -178,11 +185,11 @@ public class SeedSweeper extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One Seed Sweeper (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), " i ", "ipi", " it",
-					'p', Blocks.piston,
-					'i', Items.iron_ingot,
-					't', Blocks.tripwire_hook
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), " i ", "ipi", " it",
+					'p', Blocks.PISTON,
+					'i', Items.IRON_INGOT,
+					't', Blocks.TRIPWIRE_HOOK
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

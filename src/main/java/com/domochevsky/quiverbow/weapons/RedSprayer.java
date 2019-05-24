@@ -2,15 +2,21 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -20,10 +26,10 @@ import com.domochevsky.quiverbow.ShotPotion;
 import com.domochevsky.quiverbow.ammo.LargeRedstoneMagazine;
 import com.domochevsky.quiverbow.projectiles.RedSpray;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class RedSprayer extends _WeaponBase
 {
@@ -41,7 +47,7 @@ public class RedSprayer extends _WeaponBase
 	private int Wither_Duration;
 	private int Blindness_Duration;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -49,22 +55,23 @@ public class RedSprayer extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/RedSprayer");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/RedSprayer_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -74,7 +81,7 @@ public class RedSprayer extends _WeaponBase
 		this.setCooldown(stack, this.Cooldown);
 
 		// SFX
-		entity.worldObj.playSoundAtEntity(entity, "random.fizz", 0.7F, 1.5F);
+		//entity.world.playSoundAtEntity(entity, "random.fizz", 0.7F, 1.5F);
 
 		int counter = 0;
 
@@ -99,13 +106,13 @@ public class RedSprayer extends _WeaponBase
 		// Gas
 		ShotPotion effect1 = new ShotPotion();
 
-		effect1.potion = Potion.wither;
+		effect1.potion = MobEffects.WITHER;
 		effect1.Strength = this.Wither_Strength;
 		effect1.Duration = this.Wither_Duration;
 
 		ShotPotion effect2 = new ShotPotion();
 
-		effect2.potion = Potion.blindness;
+		effect2.potion = MobEffects.BLINDNESS;
 		effect2.Strength = 1;
 		effect2.Duration = this.Blindness_Duration;
 
@@ -113,12 +120,12 @@ public class RedSprayer extends _WeaponBase
 		float spreadHor = world.rand.nextFloat() * 20 - 10;								// Spread between -10 and 10
 		float spreadVert = world.rand.nextFloat() * 20 - 10;
 
-		RedSpray shot = new RedSpray(entity.worldObj, entity, (float) this.Speed, spreadHor, spreadVert);
+		RedSpray shot = new RedSpray(entity.world, entity, (float) this.Speed, spreadHor, spreadVert);
 
 		shot.pot1 = effect1;
 		shot.pot2 = effect2;
 
-		entity.worldObj.spawnEntityInWorld(shot);
+		entity.world.spawnEntity(shot);
 	}
 
 
@@ -136,41 +143,41 @@ public class RedSprayer extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		entityitem.setPickupDelay(10);
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		//world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Redstone: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Redstone: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Redstone: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Redstone: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.GREEN + "Wither " + this.Wither_Strength + " for " + this.displayInSec(this.Wither_Duration) + " sec on hit.");
-		list.add(EnumChatFormatting.GREEN + "Blindness 1 for " + this.displayInSec(this.Blindness_Duration) + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Wither " + this.Wither_Strength + " for " + this.displayInSec(this.Wither_Duration) + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Blindness 1 for " + this.displayInSec(this.Blindness_Duration) + " sec on hit.");
 
-		list.add(EnumChatFormatting.RED + "Does not deal direct damage.");
+		list.add(TextFormatting.RED + "Does not deal direct damage.");
 
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current magazine.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with a Large Redstone Magazine");
-		list.add(EnumChatFormatting.YELLOW + "to reload.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current magazine.");
+		list.add(TextFormatting.YELLOW + "Craft with a Large Redstone Magazine");
+		list.add(TextFormatting.YELLOW + "to reload.");
 
 		list.add("The muzzle is slightly corroded.");
 	}
@@ -198,13 +205,13 @@ public class RedSprayer extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One redstone sprayer (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxz", "aba", "zyz",
-					'x', Blocks.piston,
-					'y', Blocks.tripwire_hook,
-					'z', Items.iron_ingot,
-					'a', Items.repeater,
-					'b', Blocks.sticky_piston
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "zxz", "aba", "zyz",
+					'x', Blocks.PISTON,
+					'y', Blocks.TRIPWIRE_HOOK,
+					'z', Items.IRON_INGOT,
+					'a', Items.REPEATER,
+					'b', Blocks.STICKY_PISTON
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

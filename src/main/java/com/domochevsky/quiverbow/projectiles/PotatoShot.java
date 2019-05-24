@@ -3,9 +3,11 @@ package com.domochevsky.quiverbow.projectiles;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -30,7 +32,7 @@ public class PotatoShot extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target) 
+	public void onImpact(RayTraceResult target) 
 	{
 		if (target.entityHit != null) 
     	{
@@ -40,22 +42,26 @@ public class PotatoShot extends _ProjectileBase
         else 
         {        	
         	// Glass breaking
-            Helper.tryBlockBreak(this.worldObj, this, target, 1);
+            Helper.tryBlockBreak(this.world, this, target, 1);
             
         	if (this.shouldDrop && this.canBePickedUp)	// If we can be picked up then we're dropping now
         	{
-	        	ItemStack nuggetStack = new ItemStack(Items.baked_potato);
-	        	EntityItem entityitem = new EntityItem(this.worldObj, target.blockX, target.blockY + 0.5d, target.blockZ, nuggetStack);
-	            entityitem.delayBeforeCanPickup = 10;
+	        	ItemStack nuggetStack = new ItemStack(Items.BAKED_POTATO);
+	        	
+	        	//EntityItem entityitem = new EntityItem(this.world, new BlockPos(target.getBlockPos().getX(), target.getBlockPos().getY() + 0.5d, target.getBlockPos().getZ()), nuggetStack);
+	        	EntityItem entityitem = new EntityItem(this.world);
+	        	entityitem.setPosition(target.getBlockPos().getX(), target.getBlockPos().getY() + 0.5d, target.getBlockPos().getZ());
+	        	
+	        	entityitem.setPickupDelay(10);
 	            
 	            if (captureDrops) { capturedDrops.add(entityitem); }
-	            else { this.worldObj.spawnEntityInWorld(entityitem); }
+	            else { this.world.spawnEntity(entityitem); }
         	}
         }
     	
     	// SFX
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 3, (byte) 2);
-        this.worldObj.playSoundAtEntity(this, "random.eat", 0.6F, 0.7F);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 3, (byte) 2);
+        this.playSound(SoundEvents.ENTITY_GENERIC_EAT, 0.6F, 0.7F);
         
         this.setDead();		// We've hit something, so begone with the projectile
 	}

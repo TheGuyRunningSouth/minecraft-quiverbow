@@ -3,13 +3,18 @@ package com.domochevsky.quiverbow.weapons;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.oredict.RecipeSorter;
@@ -18,10 +23,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.projectiles.HealthBeam;
 import com.domochevsky.quiverbow.recipes.Recipe_RayOfHope_Reload;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class MediGun extends _WeaponBase
 {
@@ -33,7 +38,7 @@ public class MediGun extends _WeaponBase
 	@Override
 	public String getItemStackDisplayName(ItemStack stack) { return this.namePublic; }
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -41,16 +46,17 @@ public class MediGun extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/MediGun");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/MediGun_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -60,14 +66,14 @@ public class MediGun extends _WeaponBase
 		// Good to go (already verified)
 
 		// SFX
-		entity.worldObj.playSoundAtEntity(entity, "random.fizz", 0.7F, 1.4F);
+		//entity.world.playSoundAtEntity(entity, "random.fizz", 0.7F, 1.4F);
 
-		HealthBeam beam = new HealthBeam(entity.worldObj, entity, (float) this.Speed);
+		HealthBeam beam = new HealthBeam(entity.world, entity, (float) this.Speed);
 
 		beam.ignoreFrustumCheck = true;
 		beam.ticksInAirMax = 40;
 
-		entity.worldObj.spawnEntityInWorld(beam); 	// Firing!
+		entity.world.spawnEntity(beam); 	// Firing!
 
 		this.consumeAmmo(stack, entity, 1);
 		this.setCooldown(stack, this.Cooldown);
@@ -76,25 +82,25 @@ public class MediGun extends _WeaponBase
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean advancedTooltips)	// Seems to be true when the F3 + H screen is up
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)	// Seems to be true when the F3 + H screen is up
 	{
-		super.addInformation(stack, player, list, advancedTooltips);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Potion: INFINITE / " + this.getMaxDamage() + " mb");
+			list.add(TextFormatting.BLUE + "Potion: INFINITE / " + this.getMaxDamage() + " mb");
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Potion: " + ammo + " / " + this.getMaxDamage() + " mb");
-		}
+			list.add(TextFormatting.BLUE + "Potion: " + ammo + " / " + this.getMaxDamage() + " mb");
+		//}
 
-		list.add(EnumChatFormatting.GREEN + "Regeneration 3 for 1 sec on hit.");
-		list.add(EnumChatFormatting.GREEN + "Sustained.");
+		list.add(TextFormatting.GREEN + "Regeneration 3 for 1 sec on hit.");
+		list.add(TextFormatting.GREEN + "Sustained.");
 
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Regeneration");
-		list.add(EnumChatFormatting.YELLOW + "Potions (I or II) to reload.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Regeneration");
+		list.add(TextFormatting.YELLOW + "Potions (I or II) to reload.");
 
 		list.add("The beacon shimmers encouragingly.");
 	}
@@ -117,14 +123,14 @@ public class MediGun extends _WeaponBase
 	{
 		if (this.Enabled)
 		{
-			// Use a beacon for this (+ obsidian, tripwire hook... what else)
+			/*// Use a beacon for this (+ obsidian, tripwire hook... what else)
 			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "bi ", "ico", " ot",
-					'b', Blocks.beacon,
-					'o', Blocks.obsidian,
-					't', Blocks.tripwire_hook,
-					'c', Items.cauldron,
-					'i', Items.iron_ingot
-					);
+					'b', Blocks.BEACON,
+					'o', Blocks.OBSIDIAN,
+					't', Blocks.TRIPWIRE_HOOK,
+					'c', Items.CAULDRON,
+					'i', Items.IRON_INGOT
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
@@ -132,10 +138,10 @@ public class MediGun extends _WeaponBase
 
 		ArrayList list = new ArrayList();
 
-		list.add(new ItemStack(Items.potionitem, 1, 8193));
-		list.add(new ItemStack(Items.potionitem, 1, 8225));
+		list.add(new ItemStack(Items.POTIONITEM, 1, 8193));
+		list.add(new ItemStack(Items.POTIONITEM, 1, 8225));
 
-		GameRegistry.addRecipe(new Recipe_RayOfHope_Reload(new ItemStack(this), list, new ItemStack(Items.potionitem, 1, 8193), new ItemStack(Items.potionitem, 1, 8225)));
+		//GameRegistry.addRecipe(new Recipe_RayOfHope_Reload(new ItemStack(this), list, new ItemStack(Items.POTIONITEM, 1, 8193), new ItemStack(Items.POTIONITEM, 1, 8225)));
 	}
 
 

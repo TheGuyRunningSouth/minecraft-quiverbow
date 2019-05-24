@@ -2,7 +2,9 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
@@ -11,8 +13,11 @@ import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -20,13 +25,13 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.net.NetHelper;
 import com.domochevsky.quiverbow.projectiles.EnderAccelerator;
-import com.domochevsky.quiverbow.recipes.Recipe_ERA;
+//import com.domochevsky.quiverbow.recipes.Recipe_ERA;
 import com.domochevsky.quiverbow.recipes.Recipe_Weapon;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ERA extends _WeaponBase
 {
@@ -48,25 +53,30 @@ public class ERA extends _WeaponBase
 	}
 	
 	
-	@SideOnly(Side.CLIENT)
+	/*@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
 	{  
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/EnderRailgun");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/EnderRailgun_Empty");	// Burnt out
-	}
+	}*/
 	
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
 	{	
-		if (world.isRemote) { return stack; }	// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Not doing this on client side
 				
-		if (stack.getItemDamage() >= stack.getMaxDamage()) { return stack; }	// Is burnt out
+		if (stack.getItemDamage() >= stack.getMaxDamage())
+		{
+			//player.playSound(SoundEvents.)
+			return new ActionResult(EnumActionResult.PASS, stack);
+		}	// Is burnt out
 		
 		this.doSingleFire(stack, world, player);
 		
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 	
 	
@@ -95,7 +105,7 @@ public class ERA extends _WeaponBase
 			stack.getTagCompound().setInteger("acceleration", stack.getTagCompound().getInteger("acceleration") - 1);	// Ticking down
 			stack.getTagCompound().setFloat("accSFX", stack.getTagCompound().getFloat("accSFX") + 0.02f);	// And pitching up
 			
-			world.playSoundAtEntity(entity, "mob.endermen.portal", stack.getTagCompound().getFloat("accSFX"), stack.getTagCompound().getFloat("accSFX"));
+			// world.playSoundAtEntity(entity, "mob.endermen.portal", stack.getTagCompound().getFloat("accSFX"), stack.getTagCompound().getFloat("accSFX"));
 			// mob.endermen.portal
 			// mob.enderdragon.wings
 			
@@ -113,7 +123,7 @@ public class ERA extends _WeaponBase
 					entity.attackEntityFrom(DamageSource.causeThrownDamage(entity, entity), 20.0f);	// Hurtin'
 				}
 				
-				boolean damageTerrain = world.getGameRules().getGameRuleBooleanValue("mobGriefing");
+				boolean damageTerrain = world.getGameRules().getBoolean("mobGriefing");
 				
 				if (!holdingItem)	// Isn't holding the weapon, so this is gonna go off in their pockets
 				{
@@ -138,7 +148,7 @@ public class ERA extends _WeaponBase
 				if (stack.hasTagCompound() && stack.getTagCompound().getBoolean("hasEmeraldMuzzle"))
 				{
 					// Has a muzzle, so no boom
-					world.playSoundAtEntity(entity, "random.explode", 2.0F, 0.1F);
+					// world.playSoundAtEntity(entity, "random.explode", 2.0F, 0.1F);
 					NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 11, (byte) 6);
 				}
 				else
@@ -159,7 +169,7 @@ public class ERA extends _WeaponBase
 				shot.damageTerrain = damageTerrain;
 				shot.explosionSize = (float) this.explosionTarget;
 				
-				world.spawnEntityInWorld(shot);
+				world.spawnEntity(shot);
 				
 				// Set weapon to "burnt out" (if the user's a player and not in creative mode)
 				if (entity instanceof EntityPlayer)
@@ -198,24 +208,24 @@ public class ERA extends _WeaponBase
 	
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 		
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " to hit target.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " to hit target.");
 		
-		list.add(EnumChatFormatting.GREEN + "Explosion with " + this.explosionTarget + " block radius on hit.");
+		list.add(TextFormatting.GREEN + "Explosion with " + this.explosionTarget + " block radius on hit.");
 		
 		if (stack.hasTagCompound() && stack.getTagCompound().getBoolean("hasEmeraldMuzzle"))
 		{
-			list.add(EnumChatFormatting.GREEN + "Has an emerald muzzle.");
+			list.add(TextFormatting.GREEN + "Has an emerald muzzle.");
 		}
 		else
 		{
-			list.add(EnumChatFormatting.RED + "Explosion with " + this.explosionSelf + " block radius on firing.");
+			list.add(TextFormatting.RED + "Explosion with " + this.explosionSelf + " block radius on firing.");
 		}
 		
-		list.add(EnumChatFormatting.RED + "Burns out after one shot.");
+		list.add(TextFormatting.RED + "Burns out after one shot.");
 		
 		list.add("27 blocks worth of powered rail,");
 		list.add("running through a single ender chest.");
@@ -263,21 +273,21 @@ public class ERA extends _WeaponBase
 		ItemStack[] input = new ItemStack[9];
 	
 		// Top row
-		input[0] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
-		input[1] = new ItemStack(Blocks.golden_rail, 27);	// 27 rails
-		input[2] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
+		input[0] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
+		input[1] = new ItemStack(Blocks.GOLDEN_RAIL, 27);	// 27 rails
+		input[2] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
 		
 		// Middle row
-		input[3] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
-		input[4] = new ItemStack(Item.getItemFromBlock(Blocks.ender_chest));
-		input[5] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
+		input[3] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
+		input[4] = new ItemStack(Item.getItemFromBlock(Blocks.ENDER_CHEST));
+		input[5] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
 		
 		// Bottom row
-		input[6] = new ItemStack(Item.getItemFromBlock(Blocks.tripwire_hook));
-		input[7] = new ItemStack(Items.iron_ingot);
-		input[8] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
+		input[6] = new ItemStack(Item.getItemFromBlock(Blocks.TRIPWIRE_HOOK));
+		input[7] = new ItemStack(Items.IRON_INGOT);
+		input[8] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
 		        
-        GameRegistry.addRecipe(new Recipe_ERA(input, new ItemStack(this)));
+        // GameRegistry.addRecipe(new Recipe_ERA(input, new ItemStack(this)));
 	}
 	
 	
@@ -286,21 +296,21 @@ public class ERA extends _WeaponBase
 		ItemStack[] repair = new ItemStack[9];
 		
 		// Top row
-		//repair[0] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
-		repair[1] = new ItemStack(Blocks.golden_rail);
-		//repair[2] = new ItemStack(Item.getItemFromBlock(Blocks.obsidian));
+		//repair[0] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
+		repair[1] = new ItemStack(Blocks.GOLDEN_RAIL);
+		//repair[2] = new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN));
 		
 		// Middle row
-		repair[3] = new ItemStack(Blocks.golden_rail);
+		repair[3] = new ItemStack(Blocks.GOLDEN_RAIL);
 		repair[4] = new ItemStack(this, 1 , this.getMaxDamage());
-		repair[5] = new ItemStack(Blocks.golden_rail);
+		repair[5] = new ItemStack(Blocks.GOLDEN_RAIL);
 		
 		// Bottom row
-		repair[6] = new ItemStack(Items.redstone);
-		repair[7] = new ItemStack(Items.iron_ingot);
-		repair[8] = new ItemStack(Items.redstone);
+		repair[6] = new ItemStack(Items.REDSTONE);
+		repair[7] = new ItemStack(Items.IRON_INGOT);
+		repair[8] = new ItemStack(Items.REDSTONE);
 		        
-        GameRegistry.addRecipe(new Recipe_ERA(repair, new ItemStack(this)));
+        // GameRegistry.addRecipe(new Recipe_ERA(repair, new ItemStack(this)));
 	}
 	
 	
@@ -309,21 +319,21 @@ public class ERA extends _WeaponBase
 		ItemStack[] recipe = new ItemStack[9];
 		
 		// Top row
-		recipe[0] = new ItemStack(Blocks.quartz_block);				// 0 1 2
-		recipe[1] = new ItemStack(Items.emerald);					// - - -
+		recipe[0] = new ItemStack(Blocks.QUARTZ_BLOCK);				// 0 1 2
+		recipe[1] = new ItemStack(Items.EMERALD);					// - - -
 		//recipe[2] = null;											// - - -
 		
 		// Middle row
-		recipe[3] = new ItemStack(Blocks.emerald_block);			// - - -
+		recipe[3] = new ItemStack(Blocks.EMERALD_BLOCK);			// - - -
 		//recipe[4] = null;											// 3 4 5
-		recipe[5] = new ItemStack(Items.emerald);					// - - -
+		recipe[5] = new ItemStack(Items.EMERALD);					// - - -
 		
 		// Bottom row
 		recipe[6] = new ItemStack(this);							// - - -
-		recipe[7] = new ItemStack(Blocks.emerald_block);			// - - -
-		recipe[8] = new ItemStack(Blocks.quartz_block);				// 6 7 8
+		recipe[7] = new ItemStack(Blocks.EMERALD_BLOCK);			// - - -
+		recipe[8] = new ItemStack(Blocks.QUARTZ_BLOCK);				// 6 7 8
 		        
-        GameRegistry.addRecipe(new Recipe_Weapon(recipe, new ItemStack(this), 1));	// Emerald Muzzle
+        // GameRegistry.addRecipe(new Recipe_Weapon(recipe, new ItemStack(this), 1));	// Emerald Muzzle
 	}
 	
 	
@@ -339,8 +349,8 @@ public class ERA extends _WeaponBase
 	@Override
 	public EnumRarity getRarity(ItemStack stack)
     {
-		if (stack.hasTagCompound() && stack.getTagCompound().getBoolean("hasEmeraldMuzzle")) { return EnumRarity.rare; }
+		if (stack.hasTagCompound() && stack.getTagCompound().getBoolean("hasEmeraldMuzzle")) { return EnumRarity.RARE; }
         
-        return EnumRarity.common;	// Default
+        return EnumRarity.COMMON;	// Default
     }
 }

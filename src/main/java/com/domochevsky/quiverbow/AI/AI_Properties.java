@@ -1,7 +1,8 @@
 package com.domochevsky.quiverbow.AI;
-
+/*
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
@@ -19,7 +20,7 @@ public class AI_Properties
 		
 		turret.storage = new ItemStack[8];	// Double capacity
 		
-		if (!turret.worldObj.isRemote) { return; }	// Done on client side
+		if (!turret.world.isRemote) { return; }	// Done on client side
 		
 		int counter = 0;
 		
@@ -37,7 +38,7 @@ public class AI_Properties
 	// Letting all clients in range know what I look like
 	public static void sendStateToPlayersInRange(Entity_AA turret)
 	{
-		NetHelper.sendTurretStateMessageToPlayersInRange(turret.worldObj, turret,
+		NetHelper.sendTurretStateMessageToPlayersInRange(turret.world, turret,
  			   turret.hasArmorUpgrade, turret.hasWeaponUpgrade, turret.hasRidingUpgrade, turret.hasHeavyPlatingUpgrade, turret.hasCommunicationUpgrade);
 	}
 	
@@ -51,11 +52,11 @@ public class AI_Properties
         {
            if (turret.storage[counter] == null)
            {
-        	   NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, -1, counter, 0);	// Empty
+        	   NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, -1, counter, 0);	// Empty
            }
            else
     	   {
-        	   NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, 
+        	   NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, 
         			   Item.getIdFromItem(turret.storage[counter].getItem()), counter, turret.storage[counter].getItemDamage());
     	   }
             
@@ -69,17 +70,17 @@ public class AI_Properties
 	{
 		turret.hasArmorUpgrade = true;			// Adding one now
 		
-		turret.getEntityAttribute(SharedMonsterAttributes.maxHealth).setBaseValue(40);	// Doubling the max health
+		turret.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(40);	// Doubling the max health
 	}
 	
 	
 	public static void applyPlatingUpgrade(Entity_AA turret)
 	{
 		turret.hasHeavyPlatingUpgrade = true;
-		turret.getEntityAttribute(SharedMonsterAttributes.knockbackResistance).setBaseValue(0.5d);	// Is between 0 and 1, so applying half resistance
+		turret.getEntityAttribute(SharedMonsterAttributes.KNOCKBACK_RESISTANCE).setBaseValue(0.5d);	// Is between 0 and 1, so applying half resistance
 		
 		turret.movementSpeed = 0.25;	// Slowed down
-		turret.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(turret.movementSpeed);	// Update
+		turret.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(turret.movementSpeed);	// Update
 	}
 	
 	
@@ -116,8 +117,8 @@ public class AI_Properties
 		if (player.capabilities.isCreativeMode) { return; }	// Not deducting from creative mode players
 		if (!consumeItem) { return; }						// Don't want me to consume this thing, so probably restoring properties from the packed up AA
 		
-		player.getHeldItem().stackSize -= 1;
-		if (player.getHeldItem().stackSize <= 0) { player.setCurrentItemOrArmor(0, null); }	// Used up
+		player.getHeldItemMainhand().shrink(1);
+		if (player.getHeldItemMainhand().getCount() <= 0) { player.setCurrentItemOrArmor(0, null); }	// Used up
 	}
 	
 	
@@ -133,11 +134,12 @@ public class AI_Properties
 		
 		// SFX
 		NetHelper.sendParticleMessage(player, turret.getEntityId(), (byte) 2, (byte) 4); // Firework sparks particles (2)
-		turret.worldObj.playSoundAtEntity(turret, "random.anvil_use", 0.7f, 1.0f);
+		turret.playSound(SoundEvents.BLOCK_ANVIL_USE, 0.7f, 1.0f);
 		
 		if (player.capabilities.isCreativeMode) { return; }	// Not deducting from creative mode players
 		
-		player.getHeldItem().stackSize -= 1;
-		if (player.getHeldItem().stackSize <= 0) { player.setCurrentItemOrArmor(0, null); }	// Used up
+		player.getHeldItemMainhand().shrink(1);
+		if (player.getHeldItemMainhand().getCount() <= 0) { player.setCurrentItemOrArmor(0, null); }	// Used up
 	}
 }
+*/

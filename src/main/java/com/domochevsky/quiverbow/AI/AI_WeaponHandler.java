@@ -1,10 +1,12 @@
 package com.domochevsky.quiverbow.AI;
-
+/*
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumHand;
 
 import com.domochevsky.quiverbow.ArmsAssistant.Entity_AA;
 import com.domochevsky.quiverbow.ammo.ArrowBundle;
@@ -31,7 +33,7 @@ public class AI_WeaponHandler
 		
 		turret.firstWeapon = (_WeaponBase) weapon.getItem();
 		
-		turret.setCurrentItemOrArmor(0, weapon);	// Equip
+		turret.setHeldItem(EnumHand.MAIN_HAND, weapon);	// Equip
 		AI_Targeting.setAttackRange(turret);
 		
 		turret.hasFirstWeapon = true;
@@ -45,7 +47,7 @@ public class AI_WeaponHandler
 		
 		turret.secondWeapon = (_WeaponBase) weapon.getItem();
 		
-		turret.setCurrentItemOrArmor(1, weapon);	// Equip
+		turret.setHeldItem(EnumHand.OFF_HAND, weapon);	// Equip
 		
 		turret.hasSecondWeapon = true;
 		turret.hasToldOwnerAboutSecondAmmo = false;	// Reset
@@ -72,11 +74,11 @@ public class AI_WeaponHandler
 		
 		if (secondRail)
 		{
-			if (turret.firstWeapon != null && turret.getHeldItem() != null)	// Checking fire staggering
+			if (turret.firstWeapon != null && turret.getHeldItemMainhand() != null)	// Checking fire staggering
 			{
 				if (AI_Targeting.isNameOnWhitelist(turret, Commands.cmdStaggerFire))	// Instructed to fire our weapons alternating
 				{
-					if (turret.firstWeapon.getCooldown(turret.getHeldItem()) != (turret.firstWeapon.getMaxCooldown() / 2))
+					if (turret.firstWeapon.getCooldown(turret.getHeldItemMainhand()) != (turret.firstWeapon.getMaxCooldown() / 2))
 					{
 						return;	// Not ready yet. Only firing when the primary weapon cooldown has reached half of its max
 					}
@@ -84,12 +86,12 @@ public class AI_WeaponHandler
 			}
 			
 			currentWeapon = turret.secondWeapon;
-			currentStack = turret.getEquipmentInSlot(1);
+			currentStack = turret.getHeldItemOffhand();
 		}
 		else
 		{
 			currentWeapon = turret.firstWeapon;
-			currentStack = turret.getHeldItem();
+			currentStack = turret.getHeldItemMainhand();
 		}
 		
 		// Still need to check we're actually holding anything
@@ -100,7 +102,7 @@ public class AI_WeaponHandler
 		// We're out of ammo
 		if (currentDmg >= currentWeapon.getMaxDamage()) 
 		{ 
-			turret.worldObj.playSoundAtEntity(turret, "random.click", 0.6F, 0.3F);
+			turret.playSound(SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, 0.6F, 0.3F);
 			
 			if (secondRail) { turret.secondAttackDelay = 40; }
 			else { turret.firstAttackDelay = 40; }
@@ -119,7 +121,7 @@ public class AI_WeaponHandler
 				currentStack.getTagCompound().setBoolean("isChambered", true);	// Done, we're good to go again
 				
 				// SFX
-				turret.worldObj.playSoundAtEntity(turret, "random.click", 0.8F, 0.5F);
+				turret.playSound(SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, 0.8F, 0.5F);
 				
 				// This long until you can fire again
 				if (secondRail) { turret.secondAttackDelay = currentWeapon.getMaxCooldown() + 1; }
@@ -133,7 +135,7 @@ public class AI_WeaponHandler
 		
 		if (!ignoreValidation) { AI_Targeting.lookAtTarget(turret, secondRail); }	// Just making sure
 		
-		currentWeapon.doSingleFire(currentStack, turret.worldObj, turret);	// BLAM
+		currentWeapon.doSingleFire(currentStack, turret.world, turret);	// BLAM
 		
 		if (secondRail) { turret.posY += 0.4; }	// Pos adjustment for the second rail
 		
@@ -154,12 +156,12 @@ public class AI_WeaponHandler
 		if (secondRail)
 		{
 			currentWeapon = turret.secondWeapon;
-			currentStack = turret.getEquipmentInSlot(1);
+			currentStack = turret.getHeldItemOffhand();
 		}
 		else
 		{
 			currentWeapon = turret.firstWeapon;
-			currentStack = turret.getHeldItem();
+			currentStack = turret.getHeldItemMainhand();
 		}
 		
 		if (turret.ownerName != null && turret.ownerName.equals("Herobrine"))	// We're naturally hostile, so reloading is infinite
@@ -275,17 +277,17 @@ public class AI_WeaponHandler
 					currentStack.setItemDamage(currentStack.getItemDamage() - (decreaseStackSize(turret, slot, 1) * 2));	// 2 shots per bundle
 				}
 				
-				else if (currentWeapon instanceof Crossbow_Compact && turret.storage[slot].getItem() == Items.arrow)
+				else if (currentWeapon instanceof Crossbow_Compact && turret.storage[slot].getItem() == Items.ARROW)
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 1));
 				}
 				
-				else if (currentWeapon instanceof Crossbow_Double && turret.storage[slot].getItem() == Items.arrow)
+				else if (currentWeapon instanceof Crossbow_Double && turret.storage[slot].getItem() == Items.ARROW)
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 2));
 				}
 				
-				else if (currentWeapon instanceof Crossbow_Blaze && turret.storage[slot].getItem() == Items.blaze_rod)
+				else if (currentWeapon instanceof Crossbow_Blaze && turret.storage[slot].getItem() == Items.BLAZE_ROD)
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 1));
 				}
@@ -305,17 +307,17 @@ public class AI_WeaponHandler
 					currentStack.setItemDamage(currentStack.getItemDamage() - (decreaseStackSize(turret, slot, 1) * 4));	// 1 ammo for 4 shots
 				}
 				
-				else if (currentWeapon instanceof EnderRifle && turret.storage[slot].getItem() == Items.iron_ingot)
+				else if (currentWeapon instanceof EnderRifle && turret.storage[slot].getItem() == Items.IRON_INGOT)
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 8));
 				}
 				
-				else if (currentWeapon instanceof SilkenSpinner && turret.storage[slot].getItem() == Item.getItemFromBlock(Blocks.web))
+				else if (currentWeapon instanceof SilkenSpinner && turret.storage[slot].getItem() == Item.getItemFromBlock(Blocks.WEB))
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 1));
 				}
 				
-				else if (currentWeapon instanceof SnowCannon && turret.storage[slot].getItem() == Item.getItemFromBlock(Blocks.snow))
+				else if (currentWeapon instanceof SnowCannon && turret.storage[slot].getItem() == Item.getItemFromBlock(Blocks.SNOW))
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 16));
 				}	
@@ -330,12 +332,12 @@ public class AI_WeaponHandler
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 8));	// 1 shot per bundle, can hold 8 bundles
 				}
 				
-				else if (currentWeapon instanceof Potatosser && turret.storage[slot].getItem() == Items.potato)
+				else if (currentWeapon instanceof Potatosser && turret.storage[slot].getItem() == Items.POTATO)
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 14));
 				}
 				
-				else if (currentWeapon instanceof SoulCairn && turret.storage[slot].getItem() == Items.diamond)
+				else if (currentWeapon instanceof SoulCairn && turret.storage[slot].getItem() == Items.DIAMOND)
 				{
 					currentStack.setItemDamage(currentStack.getItemDamage() - decreaseStackSize(turret, slot, 14));
 				}
@@ -344,7 +346,7 @@ public class AI_WeaponHandler
 				
 				if (sendMsg)	// something changed, so telling all clients about it
 				{
-					NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, 
+					NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, 
 							Item.getIdFromItem(turret.storage[slot].getItem()), slot, turret.storage[slot].getItemDamage());
 				}
 				
@@ -391,28 +393,28 @@ public class AI_WeaponHandler
 		
 		int amountRemoved = amount;
 		
-		if (turret.storage[slot].stackSize < amount)	// Less left than we need
+		if (turret.storage[slot].getCount() < amount)	// Less left than we need
 		{
-			amountRemoved = turret.storage[slot].stackSize;	// Adjusting how much we remove
+			amountRemoved = turret.storage[slot].getCount();	// Adjusting how much we remove
 			
-			turret.storage[slot].stackSize = 0;
+			turret.storage[slot].setCount(0);
 			
 			// Something changed, so informing the client about that now
-			NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, -1, slot, 0);
+			NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, -1, slot, 0);
 			
 			//return amountRemoved;
 		}
 		else	// Has as much as we need
 		{
-			turret.storage[slot].stackSize -= amount;
+			turret.storage[slot].setCount(turret.storage[slot].getCount() - amount);
 			
 			// Still some left?
-			if (turret.storage[slot].stackSize <= 0)	// Nope
+			if (turret.storage[slot].getCount() <= 0)	// Nope
 			{
 				turret.storage[slot] = null;	// Remove it
 				
 				// Something changed, so informing the client about that now
-				NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, -1, slot, 0);
+				NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, -1, slot, 0);
 			}
 		}		
 		
@@ -425,12 +427,12 @@ public class AI_WeaponHandler
 	private static void consumeAmmo(Entity_AA turret, boolean secondRail)
 	{
 		_WeaponBase currentWeapon = turret.firstWeapon;
-		ItemStack weaponStack = turret.getHeldItem();
+		ItemStack weaponStack = turret.getHeldItemMainhand();
 		
 		if (secondRail)
 		{
 			currentWeapon = turret.secondWeapon;
-			weaponStack = turret.getEquipmentInSlot(1);	// Slot 0 is the first weapon
+			weaponStack = turret.getHeldItemOffhand();	// Slot 0 is the first weapon
 		}
 		
 		if (currentWeapon instanceof CoinTosser) { weaponStack.setItemDamage(weaponStack.getItemDamage() + 9); }
@@ -453,17 +455,17 @@ public class AI_WeaponHandler
 	
 	public static void fireWithOwner(Entity_AA turret, boolean secondRail)
 	{
-		if (!(turret.riddenByEntity instanceof EntityPlayer)) { return; }	// Not a living thing riding us, so can't hold weapons
+		if (!(turret.getRidingEntity() instanceof EntityPlayer)) { return; }	// Not a living thing riding us, so can't hold weapons
 		
-		EntityPlayer rider = (EntityPlayer) turret.riddenByEntity;
+		EntityPlayer rider = (EntityPlayer) turret.getRidingEntity();
 		
-		if (rider.getHeldItem() == null) { return; }	// Not holding anything
+		if (rider.getHeldItemMainhand() == null) { return; }	// Not holding anything
 		
-		if (!(rider.getHeldItem().getItem() instanceof AA_Targeter)) { return; }	// Isn't holding the targeter
+		if (!(rider.getHeldItemMainhand().getItem() instanceof AA_Targeter)) { return; }	// Isn't holding the targeter
 		
-		AA_Targeter weapon = (AA_Targeter) rider.getHeldItem().getItem();
+		AA_Targeter weapon = (AA_Targeter) rider.getHeldItemMainhand().getItem();
 		
-		if (weapon.getCooldown(rider.getHeldItem()) <= 0) { return; }	// Isn't firing
+		if (weapon.getCooldown(rider.getHeldItemMainhand()) <= 0) { return; }	// Isn't firing
 		
 		turret.rotationPitch = rider.rotationPitch;
 		
@@ -472,3 +474,4 @@ public class AI_WeaponHandler
 		attackTarget(turret, secondRail, true);
 	}
 }
+*/

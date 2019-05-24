@@ -3,16 +3,18 @@ package com.domochevsky.quiverbow.recipes;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapedRecipes;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
-
+/*
 public class Recipe_ERA extends ShapedRecipes implements IRecipe
 {
-	public Recipe_ERA(ItemStack[] components, ItemStack result) // Stacksize sensitive version for recipes
+	public Recipe_ERA(NonNullList<Ingredient> components, ItemStack result) // Stacksize sensitive version for recipes
 	{
-		super(3, 3, components, result);
+		super("QBWeapons",3, 3, components, result);
 	}
 	
 	
@@ -35,7 +37,7 @@ public class Recipe_ERA extends ShapedRecipes implements IRecipe
 			{
 				if (currentStack.getItem().getClass() != this.recipeItems[currentSlot].getItem().getClass()) { return false; }	// Not the right item
 				else if (currentStack.getItemDamage() != this.recipeItems[currentSlot].getItemDamage()) { return false; }		// Damage doesn't match up
-				else if (currentStack.isStackable() && currentStack.stackSize < this.recipeItems[currentSlot].stackSize) { return false; }	// Not the right amount
+				else if (currentStack.isStackable() && currentStack.getCount() < this.recipeItems[currentSlot].stackSize) { return false; }	// Not the right amount
 				else 
 				{ 					
 					matches += 1; 	// Seems to check out
@@ -65,3 +67,4 @@ public class Recipe_ERA extends ShapedRecipes implements IRecipe
 		return stack;
 	}
 }
+*/

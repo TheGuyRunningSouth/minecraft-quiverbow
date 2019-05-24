@@ -2,14 +2,21 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -18,10 +25,10 @@ import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.ammo.GoldMagazine;
 import com.domochevsky.quiverbow.projectiles.CoinShot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class CoinTosser_Mod extends _WeaponBase
 {
@@ -37,7 +44,7 @@ public class CoinTosser_Mod extends _WeaponBase
 		this.setMaxDamage(gold.getMaxDamage());	// Fitting our max capacity to the magazine
 	}
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -46,21 +53,22 @@ public class CoinTosser_Mod extends _WeaponBase
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/CoinTosser_Modified_Empty");
 	}
 
-
+*/
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.SUCCESS, stack);
 		}
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -72,7 +80,7 @@ public class CoinTosser_Mod extends _WeaponBase
 		Helper.knockUserBack(entity, this.Kickback);			// Kickback
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 3.0F);
+		world.playSound(null, entity.posX, entity.posY, entity.posZ,  SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 3.0F);
 
 		this.setCooldown(stack, this.Cooldown);	// Cooling down now
 
@@ -122,7 +130,7 @@ public class CoinTosser_Mod extends _WeaponBase
 		shot.damage = dmg;
 		shot.setDrop(this.shouldDrop);
 
-		world.spawnEntityInWorld(shot);
+		world.spawnEntity(shot);
 	}
 
 
@@ -140,38 +148,38 @@ public class CoinTosser_Mod extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		entityitem.setPickupDelay(10);
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.break", 1.0F, 0.5F);
+		world.playSound(null, entity.posX,entity.posY, entity.posZ, SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 0.5F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Gold Nuggets: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Gold Nuggets: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Gold Nuggets: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Gold Nuggets: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per Nugget");
-		list.add(EnumChatFormatting.GREEN + "Scatter 3 when firing.");
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current magazine.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with a Gold Magazine to reload.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per Nugget");
+		list.add(TextFormatting.GREEN + "Scatter 3 when firing.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current magazine.");
+		list.add(TextFormatting.YELLOW + "Craft with a Gold Magazine to reload.");
 		list.add("Retrofit with double-piston tech.");
 		list.add("More efficient, but just as heavy.");
 	}
@@ -204,13 +212,13 @@ public class CoinTosser_Mod extends _WeaponBase
 		if (this.Enabled)
 		{
 			// Modifying the Coin Tosser with double piston tech
-			GameRegistry.addShapelessRecipe(new ItemStack(this, 1 , this.getMaxDamage()),
+			/*GameRegistry.addShapelessRecipe(new ItemStack(this, 1 , this.getMaxDamage()),
 					Helper.getWeaponStackByClass(CoinTosser.class, true),
-					Blocks.sticky_piston,
-					Blocks.tripwire_hook,
-					Items.iron_ingot,
-					Items.iron_ingot
-					);
+					Blocks.STICKY_PISTON,
+					Blocks.TRIPWIRE_HOOK,
+					Items.IRON_INGOT,
+					Items.IRON_INGOT
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

@@ -1,5 +1,5 @@
 package com.domochevsky.quiverbow.Renderer;
-
+/*
 import net.minecraft.client.renderer.entity.RenderLiving;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
@@ -17,7 +17,7 @@ public class Render_AA extends RenderLiving
 	
 	public Render_AA() 
 	{
-		super(new Model_AA(), 1.0F);
+		super(renderManager, new Model_AA(), 1.0F);
 	}
 
 	@Override
@@ -153,3 +153,4 @@ public class Render_AA extends RenderLiving
 		}
 	}
 }
+*/

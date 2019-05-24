@@ -2,12 +2,14 @@ package com.domochevsky.quiverbow.recipes;
 
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
-
+/*
 public class RecipeHelper
 {
 	// Returns true if these components are what I'm looking for to make my item
-	public static boolean doesRecipeMatch(ItemStack[] recipeItems, InventoryCrafting matrix, World world)
+	public static boolean doesRecipeMatch(NonNullList<Ingredient> recipeItems, InventoryCrafting matrix, World world)
 	{
 		int requiredMatches = 9;
 		int matches = 0;
@@ -19,9 +21,9 @@ public class RecipeHelper
 		{
 			currentStack = matrix.getStackInSlot(currentSlot);	// Hand me your item, slot
 
-			if (currentStack != null && recipeItems[currentSlot] != null)
+			if (currentStack != null && !recipeItems.isEmpty())
 			{
-				if (currentStack.getItem() != recipeItems[currentSlot].getItem())
+				if (currentStack.getItem() != recipeItems.)
 				{
 					return false; 	// Not the right item
 				}
@@ -29,7 +31,7 @@ public class RecipeHelper
 				{
 					return false; 	// Damage doesn't match up
 				}
-				else if (currentStack.isStackable() && currentStack.stackSize < recipeItems[currentSlot].stackSize)
+				else if (currentStack.isStackable() && currentStack.getCount() < recipeItems[currentSlot].getCount())
 				{
 					return false; 	// Not the right amount
 				}
@@ -53,3 +55,4 @@ public class RecipeHelper
 		else { return false; }								// Not enough
 	}
 }
+*/

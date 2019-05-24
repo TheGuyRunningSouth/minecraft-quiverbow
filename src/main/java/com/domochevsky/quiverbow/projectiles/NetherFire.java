@@ -2,10 +2,14 @@ package com.domochevsky.quiverbow.projectiles;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -25,12 +29,12 @@ public class NetherFire extends _ProjectileBase
 	@Override
 	public void doFlightSFX()
 	{
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 4, (byte) 2);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 4, (byte) 2);
 	}
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)
+	public void onImpact(RayTraceResult target)
 	{
 		if (target.entityHit != null) 		// We hit a living thing!
     	{
@@ -44,60 +48,63 @@ public class NetherFire extends _ProjectileBase
         }        
         else 
         { 
-        	Block block = this.worldObj.getBlock(target.blockX, target.blockY, target.blockZ);
+        	BlockPos oneAbove = new BlockPos(target.getBlockPos().getX(), target.getBlockPos().getY()+1, target.getBlockPos().getZ());
+        	Block block = this.world.getBlockState(target.getBlockPos()).getBlock();
 			
 			// Glass breaking
-        	Helper.tryBlockBreak(this.worldObj, this, target, 1);	// Medium
+        	Helper.tryBlockBreak(this.world, this, target, 1);	// Medium
             
         	// Let's create fire here (if we're allowed to)
-        	if (this.worldObj.getGameRules().getGameRuleBooleanValue("doFireTick") && block != Blocks.fire)
+        	if (this.world.getGameRules().getBoolean("doFireTick") && block != Blocks.FIRE)
         	{
-        		if (this.worldObj.getBlock(target.blockX, target.blockY + 1, target.blockZ).isAir(this.worldObj, target.blockX, target.blockY + 1, target.blockZ))
+        		if (this.world.getBlockState(oneAbove) == Blocks.AIR.getDefaultState())
 	        	{
 	        		// the block above the block we hit is air, so let's set it on fire!
-	        		this.worldObj.setBlock(target.blockX, target.blockY + 1, target.blockZ, Blocks.fire, 0, 3);
+	        		this.world.setBlockState(oneAbove, Blocks.FIRE.getDefaultState(), 3);
 	        	}
         		// else, not a airblock above this
         	}
         	
         	// Have we hit snow? Turning that into snow layer
-        	if (block == Blocks.snow)
+        	if (block == Blocks.SNOW)
         	{
-        		this.worldObj.setBlock(target.blockX, target.blockY, target.blockZ, Blocks.snow_layer, 7, 3);
+        		this.world.setBlockState(target.getBlockPos(), Blocks.SNOW_LAYER.getDefaultState(), 3);
         	}
         	
         	// Have we hit snow layer? Melting that down into nothing
-        	else if (block == Blocks.snow_layer)
+        	else if (block == Blocks.SNOW_LAYER)
         	{
-        		int currentMeta = this.worldObj.getBlockMetadata(target.blockX, target.blockY, target.blockZ);
+        		/* TODO: Fix snow layer melting
+        		IBlockState currentMeta = this.world.getBlockState(target.getBlockPos());
         		// Is this taller than 0? Melting it down then
-        		if (currentMeta > 0) { this.worldObj.setBlock(target.blockX, target.blockY, target.blockZ, Blocks.snow_layer, currentMeta - 1, 3); }
+        		if (currentMeta > 0) { this.world.setBlock(target.getBlockPos(), Blocks.SNOW_LAYER, currentMeta - 1, 3); }
         		// Is this 0 already? Turning it into air
-        		else { this.worldObj.setBlockToAir(target.blockX, target.blockY, target.blockZ); }
+        		else { this.world.setBlockToAir(target.getBlockPos()); }
+        		*/
         	}
         	
         	// Have we hit ice? Turning that into water
-        	else if (block == Blocks.ice)
+        	else if (block == Blocks.ICE)
         	{
-        		this.worldObj.setBlock(target.blockX, target.blockY, target.blockZ, Blocks.water, 0, 3);
+        		this.world.setBlockState(target.getBlockPos(), Blocks.WATER.getDefaultState(), 3);
         	}
         	
-        	Block topBlock = this.worldObj.getBlock(target.blockX, target.blockY + 1, target.blockZ);
+        	Block topBlock = this.world.getBlockState(oneAbove).getBlock();
         	
         	// Did we hit grass? Burning it
-        	if (topBlock.getMaterial() == Material.plants)
+        	if (topBlock.getMaterial(this.world.getBlockState(oneAbove)) == Material.PLANTS)
         	{
-        		this.worldObj.setBlock(target.blockX, target.blockY + 1, target.blockZ, Blocks.fire, 0, 3);
+        		this.world.setBlockState(oneAbove, Blocks.FIRE.getDefaultState(), 3);
         	}
-        	if (block.getMaterial() == Material.plants)
+        	if (block.getMaterial(this.world.getBlockState(oneAbove)) == Material.PLANTS)
         	{
-        		this.worldObj.setBlock(target.blockX, target.blockY, target.blockZ, Blocks.fire, 0, 3);
+        		this.world.setBlockState(target.getBlockPos(), Blocks.FIRE.getDefaultState(), 3);
         	}
         }
     	
 		// SFX
-    	this.worldObj.playSoundAtEntity(this, "random.fizz", 0.7F, 1.5F);
-    	this.worldObj.spawnParticle("smoke", this.posX, this.posY + 0.5D, this.posZ, 0.0D, 0.0D, 0.0D);	
+    	this.playSound(SoundEvents.BLOCK_FIRE_EXTINGUISH, 0.7F, 1.5F);
+    	this.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, this.posX, this.posY + 0.5D, this.posZ, 0.0D, 0.0D, 0.0D);	
     	
         this.setDead();		// We've hit something, so begone with the projectile. hitting glass only once
 	}

@@ -2,13 +2,19 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -16,10 +22,10 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.projectiles.BigRocket;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class RPG extends _WeaponBase
 {
@@ -30,7 +36,7 @@ public class RPG extends _WeaponBase
 	private int travelTime;	// How many ticks the rocket can travel before exploding
 	private boolean dmgTerrain;	// Can our projectile damage terrain?
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -38,16 +44,17 @@ public class RPG extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/RPG");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/RPG_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -64,10 +71,10 @@ public class RPG extends _WeaponBase
 		rocket.travelTicksMax = this.travelTime;
 		rocket.dmgTerrain = this.dmgTerrain;
 
-		world.spawnEntityInWorld(rocket); 		// shoom.
+		world.spawnEntity(rocket); 		// shoom.
 
 		// SFX
-		world.playSoundAtEntity(entity, "fireworks.launch", 2.0F, 0.6F);
+		entity.playSound(SoundEvents.ENTITY_FIREWORK_LAUNCH, 2.0F, 0.6F);
 
 		this.setCooldown(stack, 60);
 		this.consumeAmmo(stack, entity, 1);
@@ -76,23 +83,23 @@ public class RPG extends _WeaponBase
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Rockets: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Rockets: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Rockets: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Rockets: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.GREEN + "Explosion with radius " + this.ExplosionSize + " on hit.");
+		list.add(TextFormatting.GREEN + "Explosion with radius " + this.ExplosionSize + " on hit.");
 
-		list.add(EnumChatFormatting.RED + "The rocket has a " + this.displayInSec(this.travelTime) + " sec fuse.");
+		list.add(TextFormatting.RED + "The rocket has a " + this.displayInSec(this.travelTime) + " sec fuse.");
 
 		list.add("The fuse is way too short.");
 	}
@@ -119,22 +126,22 @@ public class RPG extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One Firework Rocket Launcher (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "x  ", "yx ", "zyx",
-					'x', Blocks.planks,
-					'y', Items.iron_ingot,
-					'z', Items.flint_and_steel
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "x  ", "yx ", "zyx",
+					'x', Blocks.PLANKS,
+					'y', Items.IRON_INGOT,
+					'z', Items.FLINT_AND_STEEL
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
 		// Fill the RPG with 1 rocket
-		GameRegistry.addRecipe(new ItemStack(this), " ab", "zya", " x ",
+		/*GameRegistry.addRecipe(new ItemStack(this), " ab", "zya", " x ",
 				'x', new ItemStack(this, 1 , this.getMaxDamage()),
-				'y', Blocks.tnt,
-				'z', Blocks.planks,
-				'a', Items.paper,
-				'b', Items.string
-				);
+				'y', Blocks.TNT,
+				'z', Blocks.PLANKS,
+				'a', Items.PAPER,
+				'b', Items.STRING
+				);*/
 	}
 
 

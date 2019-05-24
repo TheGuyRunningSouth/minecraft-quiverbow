@@ -2,12 +2,16 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -15,10 +19,10 @@ import com.domochevsky.quiverbow.Helper;
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.projectiles.BlazeShot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Crossbow_Blaze extends _WeaponBase
 {
@@ -29,7 +33,7 @@ public class Crossbow_Blaze extends _WeaponBase
 	private int FireDur;
 	private int FireDurInGround;
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -37,16 +41,17 @@ public class Crossbow_Blaze extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/CrossbowBlaze");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/CrossbowBlaze_Empty");
 	}
-
+*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -56,7 +61,7 @@ public class Crossbow_Blaze extends _WeaponBase
 		if (this.getCooldown(stack) != 0) { return; }	// Hasn't cooled down yet
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.bow", 1.0F, 0.5F);
+		//world.playSoundAtEntity(entity, "random.bow", 1.0F, 0.5F);
 
 		// Firing
 		BlazeShot entityarrow = new BlazeShot(world, entity, (float) this.Speed);
@@ -71,11 +76,11 @@ public class Crossbow_Blaze extends _WeaponBase
 		entityarrow.fireDuration = this.FireDur;
 		entityarrow.ticksInGroundMax = 200;			// 200 ticks for 10 sec
 
-		world.spawnEntityInWorld(entityarrow);	// pew
+		world.spawnEntity(entityarrow);	// pew
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.wood_click", 1.0F, 0.5F);
-		world.spawnParticle("smoke", entity.posX, entity.posY + 0.5D, entity.posZ, 0.0D, 0.0D, 0.0D);
+		//world.playSoundAtEntity(entity, "random.wood_click", 1.0F, 0.5F);
+		world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, entity.posX, entity.posY + 0.5D, entity.posZ, 0.0D, 0.0D, 0.0D);
 
 		this.consumeAmmo(stack, entity, 1);
 		this.setCooldown(stack, 10);
@@ -84,24 +89,24 @@ public class Crossbow_Blaze extends _WeaponBase
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Rods: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Rods: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Rods: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Rods: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
-		list.add(EnumChatFormatting.GREEN + "Fire for " + this.FireDur + " sec on hit.");
-		list.add(EnumChatFormatting.GREEN + "Knockback " + this.Knockback + " on hit.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with 1 Blaze Rod to reload.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax);
+		list.add(TextFormatting.GREEN + "Fire for " + this.FireDur + " sec on hit.");
+		list.add(TextFormatting.GREEN + "Knockback " + this.Knockback + " on hit.");
+		list.add(TextFormatting.YELLOW + "Craft with 1 Blaze Rod to reload.");
 		list.add("Black smoke is slowly curling up from it.");
 	}
 
@@ -132,18 +137,18 @@ public class Crossbow_Blaze extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One blaze crossbow (empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "bib", "ici", "bib",
-					'b', Items.blaze_powder,
-					'i', Items.iron_ingot,
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "bib", "ici", "bib",
+					'b', Items.BLAZE_POWDER,
+					'i', Items.IRON_INGOT,
 					'c', Helper.getWeaponStackByClass(Crossbow_Compact.class, true)
-					);
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 
-		GameRegistry.addShapelessRecipe(new ItemStack(this),	// Fill the empty blaze crossbow with one rod
-				Items.blaze_rod,
+		/*GameRegistry.addShapelessRecipe(new ItemStack(this),	// Fill the empty blaze crossbow with one rod
+				Items.BLAZE_ROD,
 				new ItemStack(this, 1 , this.getMaxDamage())
-				);
+				);*/
 	}
 
 

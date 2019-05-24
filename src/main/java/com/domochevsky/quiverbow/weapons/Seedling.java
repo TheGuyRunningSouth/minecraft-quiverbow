@@ -2,24 +2,33 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
 import com.domochevsky.quiverbow.Main;
 import com.domochevsky.quiverbow.projectiles.Seed;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Seedling extends _WeaponBase
 {
@@ -30,7 +39,7 @@ public class Seedling extends _WeaponBase
 	private int Dmg;
 	private float Spread;
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -38,20 +47,21 @@ public class Seedling extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/Seedling");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/Seedling_Empty");
 	}
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }				// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }				// Not doing this on client side
 		if (this.getDamage(stack) >= this.getMaxDamage()) 	// Is empty. How does this still exist?
 		{
 			this.breakWeapon(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.SUCCESS, stack);
 		}
 		
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 	
 	
@@ -60,7 +70,7 @@ public class Seedling extends _WeaponBase
 	{
 		// Good to go (already verified)
 		
-		world.playSoundAtEntity(entity, "random.click", 0.6F, 0.7F);
+		world.playSound(null, entity.posX, entity.posY, entity.posZ,SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, SoundCategory.BLOCKS, 0.6F, 0.7F);
 		
 		float spreadHor = world.rand.nextFloat() * 10 - 5;	// Spread
 		float spreadVert = world.rand.nextFloat() * 10 - 5;
@@ -68,7 +78,7 @@ public class Seedling extends _WeaponBase
 		Seed shot = new Seed(world, entity, (float) this.Speed, spreadHor, spreadVert);
 		shot.damage = this.Dmg;
 		
-		world.spawnEntityInWorld(shot); 	// Firing
+		world.spawnEntity(shot); 	// Firing
 		
 		if (this.consumeAmmo(stack, entity, 1)) { this.breakWeapon(world, stack, entity); }
 	}
@@ -86,48 +96,49 @@ public class Seedling extends _WeaponBase
 		EntityPlayer player = (EntityPlayer) entity;
 		
 		player.renderBrokenItemStack(stack);
-		player.destroyCurrentEquippedItem();	// Breaking
-		stack.stackSize = 0;
+		//player.destroyCurrentEquippedItem();	// Breaking
+		if (player instanceof EntityPlayerMP) CriteriaTriggers.CONSUME_ITEM.trigger((EntityPlayerMP)player, stack);
+		stack.setCount(0);
 		
-		EntityItem piston = new EntityItem(world, player.posX, player.posY + 1.0F, player.posZ, new ItemStack(Blocks.piston));
-		piston.delayBeforeCanPickup = 10;
+		EntityItem piston = new EntityItem(world, player.posX, player.posY + 1.0F, player.posZ, new ItemStack(Blocks.PISTON));
+		piston.setPickupDelay(10);
 		
 		if (player.captureDrops) { player.capturedDrops.add(piston); }
-		else { world.spawnEntityInWorld(piston); }
+		else { world.spawnEntity(piston); }
 		
-		EntityItem hook = new EntityItem(world, player.posX, player.posY + 1.0F, player.posZ, new ItemStack(Blocks.tripwire_hook));
-		hook.delayBeforeCanPickup = 10;
+		EntityItem hook = new EntityItem(world, player.posX, player.posY + 1.0F, player.posZ, new ItemStack(Blocks.TRIPWIRE_HOOK));
+		hook.setPickupDelay(10);
 		
 		if (player.captureDrops) { player.capturedDrops.add(hook); }
-		else { world.spawnEntityInWorld(hook); }
+		else { world.spawnEntity(hook); }
 		
-		world.playSoundAtEntity(player, "random.break", 1.0F, 1.5F);
+		world.playSound(player, player.getPosition(), SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 1.5F);
 	}
 	
 	
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 		
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Melon Seeds: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Melon Seeds: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Melon Seeds: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Melon Seeds: " + ammo + " / " + this.getMaxDamage());
+		//}
 		
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.Dmg);
+		list.add(TextFormatting.BLUE + "Damage: " + this.Dmg);
 		
-		list.add(EnumChatFormatting.GREEN + "80% biologically degradable.");
+		list.add(TextFormatting.GREEN + "80% biologically degradable.");
 		
-		list.add(EnumChatFormatting.RED + "Cannot be reloaded.");
+		list.add(TextFormatting.RED + "Cannot be reloaded.");
 		
-		list.add(EnumChatFormatting.YELLOW + "It's pre-loaded with 2 melons.");
+		list.add(TextFormatting.YELLOW + "It's pre-loaded with 2 melons.");
 		
 		list.add("A small weapon made out of sugar cane.");
 	}
@@ -153,12 +164,12 @@ public class Seedling extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One Seedling (fully loaded, meaning 0 damage)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , 0), "ada", "ada", "bca",
-					'a', Items.reeds,
-					'b', Blocks.tripwire_hook,
-					'c', Blocks.piston,
-					'd', Blocks.melon_block
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , 0), "ada", "ada", "bca",
+					'a', Items.REEDS,
+					'b', Blocks.TRIPWIRE_HOOK,
+					'c', Blocks.PISTON,
+					'd', Blocks.MELON_BLOCK
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 	}

@@ -6,9 +6,11 @@ import net.minecraft.entity.item.EntityTNTPrimed;
 import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -35,7 +37,7 @@ public class SmallRocket extends _ProjectileBase
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition target)	// Server-side
+	public void onImpact(RayTraceResult target)	// Server-side
 	{
 		if (target.entityHit != null) 	// Hit a entity
     	{
@@ -44,7 +46,7 @@ public class SmallRocket extends _ProjectileBase
 			target.entityHit.hurtResistantTime = 0; // No immunity frames
 			
 			// Knockback
-            double f3 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
+            double f3 = MathHelper.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
             if (f3 > 0.0F) 
             {
             	target.entityHit.addVelocity(
@@ -62,26 +64,21 @@ public class SmallRocket extends _ProjectileBase
 		}
 		else 	// Hit a block
 		{ 
-			Block block = this.worldObj.getBlock(target.blockX, target.blockY, target.blockZ);
+			Block block = this.world.getBlockState(target.getBlockPos()).getBlock();
 			
 			// Glass breaking, once
-			if (Helper.tryBlockBreak(this.worldObj, this, target, 1) && this.targetsHit < 1) { this.targetsHit += 1; }
+			if (Helper.tryBlockBreak(this.world, this, target, 1) && this.targetsHit < 1) { this.targetsHit += 1; }
 			else { this.setDead(); }	// else, either we didn't break that block or we already hit one entity
             
 			// Let's ignite TNT explicitly here.
-			if (block == Blocks.tnt)
+			if (block == Blocks.TNT)
 			{
-				this.worldObj.setBlockToAir(target.blockX, target.blockY, target.blockZ); // setBlockToAir
-               
-				EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(this.worldObj, 
-                		(double)((float)target.blockX + 0.5F), 
-                		(double)((float)target.blockY + 0.5F), 
-                		(double)((float)target.blockZ + 0.5F), 
-                		this.shootingEntity);									
+				this.world.setBlockToAir(target.getBlockPos()); // setBlockToAir
+				EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(this.world, target.getBlockPos().getX()+0.5F,target.getBlockPos().getY()+0.5F,target.getBlockPos().getZ()+0.5F, this.shootingEntity);									
 
-                this.worldObj.spawnEntityInWorld(entitytntprimed);			// This is TNT, so begone with that block and replace it with primed TNT
+                this.world.spawnEntity(entitytntprimed);			// This is TNT, so begone with that block and replace it with primed TNT
                 
-                this.worldObj.playSoundAtEntity(entitytntprimed, "random.fuse", 1.0F, 1.0F);
+                entitytntprimed.playSound(SoundEvents.ENTITY_TNT_PRIMED, 1.0F, 1.0F);
 			}
 			// else, block is not TNT
 		} 
@@ -96,10 +93,10 @@ public class SmallRocket extends _ProjectileBase
 			}
 			else
 			{
-				griefing = this.worldObj.getGameRules().getGameRuleBooleanValue("mobGriefing");	// Are we allowed to break things?
+				griefing = this.world.getGameRules().getBoolean("mobGriefing");	// Are we allowed to break things?
 			}
 			
-			this.worldObj.createExplosion(this, this.posX, this.posY, this.posZ, (float) this.explosionSize, griefing); 	
+			this.world.createExplosion(this, this.posX, this.posY, this.posZ, (float) this.explosionSize, griefing); 	
 			// 4.0F is TNT, false is for "not flaming"
 			// Editchevsky: Actually, false is double-used for "don't damage terrain"
 		}
@@ -109,7 +106,7 @@ public class SmallRocket extends _ProjectileBase
 	@Override
 	public void doFlightSFX() 
 	{ 
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 2, (byte) 4);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 2, (byte) 4);
 	}
 	
 	

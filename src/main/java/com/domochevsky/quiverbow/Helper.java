@@ -3,7 +3,9 @@ package com.domochevsky.quiverbow;
 import java.util.ArrayList;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -14,9 +16,13 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.Vec3;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.world.GameType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldSettings;
 import net.minecraftforge.common.ForgeHooks;
@@ -25,20 +31,46 @@ import net.minecraftforge.event.world.BlockEvent;
 import com.domochevsky.quiverbow.ammo._AmmoBase;
 import com.domochevsky.quiverbow.net.NetHelper;
 import com.domochevsky.quiverbow.projectiles._ProjectileBase;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Armor;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Communication;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Mobility;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Plating;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Riding;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Storage;
-import com.domochevsky.quiverbow.recipes.Recipe_AA_Weapon;
+// import com.domochevsky.quiverbow.recipes.Recipe_AA_Armor;
+// import com.domochevsky.quiverbow.recipes.Recipe_AA_Communication;
+// import com.domochevsky.quiverbow.recipes.Recipe_AA_Mobility;
+// import com.domochevsky.quiverbow.recipes.Recipe_AA_Plating;
+//import com.domochevsky.quiverbow.recipes.Recipe_AA_Riding;
+// import com.domochevsky.quiverbow.recipes.Recipe_AA_Storage;
+// import com.domochevsky.quiverbow.recipes.Recipe_AA_Weapon;
 import com.domochevsky.quiverbow.recipes.Recipe_Ammo;
 import com.domochevsky.quiverbow.weapons._WeaponBase;
 
-import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 public class Helper
 {
+	public static RayTraceResult getMovingObjectPositionFromPlayer(World world, EntityPlayer player, double targetingDistance)
+	{
+		float f = 1.0F;
+		float f1 = player.prevRotationPitch + (player.rotationPitch - player.prevRotationPitch) * f;
+		float f2 = player.prevRotationYaw + (player.rotationYaw - player.prevRotationYaw) * f;
+		
+		double playerX = player.prevPosX + (player.posX - player.prevPosX) * f;
+		double playerY = player.prevPosY + (player.posY - player.prevPosY) * f + (world.isRemote ? player.getEyeHeight() - player.getDefaultEyeHeight() : player.getEyeHeight()); // isRemote check to revert changes to ray trace position due to adding the eye height clientside and player yOffset differences
+		double playerZ = player.prevPosZ + (player.posZ - player.prevPosZ) * f;
+		
+		Vec3d vecPlayer = new Vec3d(playerX, playerY, playerZ);
+		
+		float f3 = MathHelper.cos(-f2 * 0.017453292F - (float)Math.PI);
+		float f4 = MathHelper.sin(-f2 * 0.017453292F - (float)Math.PI);
+		float f5 = -MathHelper.cos(-f1 * 0.017453292F);
+		float f6 = MathHelper.sin(-f1 * 0.017453292F);
+		float f7 = f4 * f5;
+		float f8 = f3 * f5;
+		
+		double maxDistance = targetingDistance;
+		
+		Vec3d vecTarget = vecPlayer.addVector(f7 * maxDistance, f6 * maxDistance, f8 * maxDistance);
+		
+		return world.rayTraceBlocks(vecPlayer, vecTarget, false, false, true);	// false, true, false
+	}
+	
 	// Overhauled method for registering ammo (specifically, using magazines)
 	public static void registerAmmoRecipe(Class<? extends _AmmoBase> ammoBase, Item weapon)
 	{
@@ -52,7 +84,7 @@ public class Helper
 		list.add(weaponStack);
 		list.add(ammoStack);
 		
-		GameRegistry.addRecipe(new Recipe_Ammo(ammo, weapon, list));
+		//GameRegistry.addRecipe(new Recipe_Ammo(ammo, weapon, list));
 	}
 	
 	
@@ -71,7 +103,7 @@ public class Helper
 				counter += 1;
 			}
 			
-			GameRegistry.addRecipe(new Recipe_AA_Armor(result, list));
+			//GameRegistry.addRecipe(new Recipe_AA_Armor(result, list));
 		}
 		
 		
@@ -88,22 +120,22 @@ public class Helper
 				counter += 1;
 			}
 			
-			GameRegistry.addRecipe(new Recipe_AA_Plating(result, list));
+			//GameRegistry.addRecipe(new Recipe_AA_Plating(result, list));
 		}
 		
 		else if (upgradeType.equals("hasMobilityUpgrade"))
 		{
-			GameRegistry.addRecipe(new Recipe_AA_Mobility(3, 3, input, result));
+			//GameRegistry.addRecipe(new Recipe_AA_Mobility(3, 3, input, result));
 		}
 		
 		else if (upgradeType.equals("hasStorageUpgrade"))
 		{
-			GameRegistry.addRecipe(new Recipe_AA_Storage(3, 3, input, result));
+			//GameRegistry.addRecipe(new Recipe_AA_Storage(3, 3, input, result));
 		}
 		
 		else if (upgradeType.equals("hasWeaponUpgrade"))
 		{
-			GameRegistry.addRecipe(new Recipe_AA_Weapon(3, 3, input, result));
+			//GameRegistry.addRecipe(new Recipe_AA_Weapon(3, 3, input, result));
 		}
 		
 		else if (upgradeType.equals("hasRidingUpgrade"))
@@ -119,7 +151,7 @@ public class Helper
 				counter += 1;
 			}
 			
-			GameRegistry.addRecipe(new Recipe_AA_Riding(result, list));
+			//GameRegistry.addRecipe(new Recipe_AA_Riding(result, list));
 		}
 		
 		else if (upgradeType.equals("hasCommunicationUpgrade"))
@@ -135,7 +167,7 @@ public class Helper
 				counter += 1;
 			}
 			
-			GameRegistry.addRecipe(new Recipe_AA_Communication(result, list));
+			//GameRegistry.addRecipe(new Recipe_AA_Communication(result, list));
 		}
 	}
 	
@@ -144,7 +176,7 @@ public class Helper
 	{
 		for(_AmmoBase ammunition : Main.ammo)
 		{
-			if (ammunition.getClass() == targetClass) { return ammunition; }	// Found it
+			if (ammunition.getClass() == targetClass) { return ammunition; }	// Found it		
 		}
 		
 		return null;	// Don't have what you're looking for
@@ -209,7 +241,7 @@ public class Helper
 		while (currentPos >= shotIncrease)	// doing this until we've reached our last possible loading state
 		{
 			params[tempCount] = new ItemStack(weapon, 1, currentPos);	// The current weapon item with metadata to be reloaded
-			GameRegistry.addShapelessRecipe(new ItemStack(weapon, 1, (currentPos - shotIncrease) ), params);
+			//GameRegistry.addShapelessRecipe(new ItemStack(weapon, 1, (currentPos - shotIncrease) ), params);
 			// if this is 8 dmg (= empty) then reloading with this will be 5, all the way down to 0
 			
 			currentPos -= 1;	// Counting down until we reach 0 (= full)
@@ -259,16 +291,16 @@ public class Helper
 		{
 			int dur = potion.getDuration();
 			
-			entitylivingbase.addPotionEffect( new PotionEffect(pot.potion.id, pot.Duration + dur, pot.Strength - 1, false) );
+			entitylivingbase.addPotionEffect( new PotionEffect(pot.potion, pot.Duration + dur, pot.Strength - 1, false, false) );
 		}
-		else { entitylivingbase.addPotionEffect( new PotionEffect(pot.potion.id, pot.Duration, pot.Strength - 1, false) ); }	// Fresh
+		else { entitylivingbase.addPotionEffect( new PotionEffect(pot.potion, pot.Duration, pot.Strength - 1, false, false) ); }	// Fresh
 	}
 	
 	
 	// Time to make a mess!
 	// Checking if the block hit can be broken
 	// stronger weapons can break more block types
-	public static boolean tryBlockBreak(World world, Entity entity, MovingObjectPosition target, int strength)
+	public static boolean tryBlockBreak(World world, Entity entity, RayTraceResult target, int strength)
 	{
 		if (!Main.breakGlass) { return false; }	// Not allowed to break anything in general
 		
@@ -279,12 +311,12 @@ public class Helper
 			if (projectile.shootingEntity != null && !(projectile.shootingEntity instanceof EntityPlayer))
 			{
 				// Not shot by a player, so checking for mob griefing
-				if (!world.getGameRules().getGameRuleBooleanValue("mobGriefing")) { return false; }	// Not allowed to break things
+				if (!world.getGameRules().getBoolean("mobGriefing")) { return false; }	// Not allowed to break things
 			}
 		}
 		
-		Block block = world.getBlock(target.blockX, target.blockY, target.blockZ);
-		int meta = world.getBlockMetadata(target.blockX, target.blockY, target.blockZ);
+		Block block = world.getBlockState(target.getBlockPos()).getBlock();
+		IBlockState meta = world.getBlockState(target.getBlockPos());
 		
 		if (block == null) { return false; }	// Didn't hit a valid block? Do we continue? Stop?
 		
@@ -294,69 +326,69 @@ public class Helper
 
 		if (strength >= 0)	// Weak stuff
 		{
-			if (block.getMaterial() == Material.cake)	// Hit something made of cake. Breaking it!
+			if (block.getMaterial(meta) == Material.CAKE)	// Hit something made of cake. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeCloth.getBreakSound(), 1.0F, 1.0F);
+				world.playSound(entity.posX,entity.posY, entity.posZ, SoundType.CLOTH.getBreakSound(), SoundCategory.BLOCKS, 1.0F, 1.0F, breakThis);
 				breakThis = true;
 			}
 			
-			else if (block.getMaterial() == Material.gourd)	// Hit something made of ...gourd? Breaking it!
+			else if (block.getMaterial(meta) == Material.GOURD)	// Hit something made of ...gourd? Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGrass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GRASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 		}
 		
 		if (strength >= 1)	// Medium stuff
 		{
-			if (block.getMaterial() == Material.glass)	// Hit something made of glass. Breaking it!
+			if (block.getMaterial(meta) == Material.GLASS)	// Hit something made of glass. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGlass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GLASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 			
-			else if (block.getMaterial() == Material.web)	// Hit something made of web. Breaking it!
+			else if (block.getMaterial(meta) == Material.WEB)	// Hit something made of web. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeCloth.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.CLOTH.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 			
-			else if (block == Blocks.torch)	// Hit a torch. Breaking it!
+			else if (block == Blocks.TORCH)	// Hit a torch. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeWood.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.WOOD.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 			
-			else if (block == Blocks.pumpkin)	// Hit a pumpkin. Breaking it!
+			else if (block == Blocks.PUMPKIN)	// Hit a pumpkin. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGrass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GRASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 			
-			else if (block == Blocks.melon_block)	// Hit a melon. Breaking it!
+			else if (block == Blocks.MELON_BLOCK)	// Hit a melon. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGrass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GRASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 			
-			else if (block == Blocks.flower_pot)	// Hit a flower pot. Breaking it!
+			else if (block == Blocks.FLOWER_POT)	// Hit a flower pot. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGrass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GRASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 		}
 		
 		if (strength >= 2)	// Strong stuff
 		{
-			if (block.getMaterial() == Material.leaves)	// Hit something made of leaves. Breaking it!
+			if (block.getMaterial(meta) == Material.LEAVES)	// Hit something made of leaves. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGrass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GRASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 			
-			else if (block.getMaterial() == Material.ice)	// Hit something made of ice. Breaking it!
+			else if (block.getMaterial(meta) == Material.ICE)	// Hit something made of ice. Breaking it!
 			{
-				world.playSoundAtEntity(entity, Block.soundTypeGlass.getBreakSound(), 1.0F, 1.0F);
+				//world.playSoundAtEntity(entity, SoundType.GLASS.getBreakSound(), 1.0F, 1.0F);
 				breakThis = true;
 			}
 		}
@@ -365,18 +397,18 @@ public class Helper
 		{
 			breakThis = true;	// Default breakage, then negating what doesn't work
 			
-			if (block.getMaterial() == Material.lava) { breakThis = false; }
-			else if (block.getMaterial() == Material.air) { breakThis = false; }
-			else if (block.getMaterial() == Material.portal) { breakThis = false; }
+			if (block.getMaterial(meta) == Material.LAVA) { breakThis = false; }
+			else if (block.getMaterial(meta) == Material.AIR) { breakThis = false; }
+			else if (block.getMaterial(meta) == Material.PORTAL) { breakThis = false; }
 			
-			else if (block == Blocks.bedrock) { breakThis = false; }
-			else if (block == Blocks.lava) { breakThis = false; }
-			else if (block == Blocks.flowing_lava) { breakThis = false; }
-			else if (block == Blocks.obsidian) { breakThis = false; }
-			else if (block == Blocks.mob_spawner) { breakThis = false; }
+			else if (block == Blocks.BEDROCK) { breakThis = false; }
+			else if (block == Blocks.LAVA) { breakThis = false; }
+			else if (block == Blocks.FLOWING_LAVA) { breakThis = false; }
+			else if (block == Blocks.OBSIDIAN) { breakThis = false; }
+			else if (block == Blocks.MOB_SPAWNER) { breakThis = false; }
 		}
 		
-		if (block == Blocks.beacon)	{ breakThis = false; }	// ...beacons are made out of glass, too. Not breaking those.
+		if (block == Blocks.BEACON)	{ breakThis = false; }	// ...beacons are made out of glass, too. Not breaking those.
 		
 		if (breakThis)	// Breaking? Breaking!
 		{
@@ -391,24 +423,24 @@ public class Helper
 
 					if (shooter instanceof EntityPlayerMP)
 					{
-						WorldSettings.GameType gametype = world.getWorldInfo().getGameType();
-						BlockEvent.BreakEvent event = ForgeHooks.onBlockBreakEvent(world, gametype, (EntityPlayerMP) shooter, target.blockX, target.blockY, target.blockZ);
+						GameType gametype = world.getWorldInfo().getGameType();
+						int event = ForgeHooks.onBlockBreakEvent(world, gametype, (EntityPlayerMP) shooter, target.getBlockPos());
 
-						if (event.isCanceled()) { return false; }	// Not allowed to do this
+						if (event == -1) { return false; }	// Not allowed to do this
 					}
 				}
 				else if (entity instanceof EntityPlayerMP)
 				{
-					WorldSettings.GameType gametype = entity.worldObj.getWorldInfo().getGameType();
-					BlockEvent.BreakEvent event = ForgeHooks.onBlockBreakEvent(entity.worldObj, gametype, (EntityPlayerMP) entity, target.blockX, target.blockY, target.blockZ);
+					GameType gametype = entity.world.getWorldInfo().getGameType();
+					int event = ForgeHooks.onBlockBreakEvent(entity.world, gametype, (EntityPlayerMP) entity, target.getBlockPos());
 					
-					if (event.isCanceled()) { breakThis = false; }	// Not allowed to do this
+					if (event == -1) { breakThis = false; }	// Not allowed to do this
 				}
 			}
 			// else, not interested in sending such a event, so whatever
 
-			world.setBlockToAir(target.blockX, target.blockY, target.blockZ);
-			block.dropBlockAsItem(world, target.blockX, target.blockY, target.blockZ, meta, 0);
+			world.setBlockToAir(target.getBlockPos());
+			block.dropBlockAsItem(world, target.getBlockPos(), meta, 0);
 			
 			return true;	// Successfully broken
 		}
@@ -419,22 +451,23 @@ public class Helper
 	
 	// Returns true if the asked for block has a valid material.
 	// Used for attaching the fen light to blocks
-	public static boolean hasValidMaterial(World world, int x, int y, int z)
+	public static boolean hasValidMaterial(World world, BlockPos pos)
 	{
-		Block block = world.getBlock(x, y, z);
+		Block block = world.getBlockState(pos).getBlock();
+		IBlockState state = world.getBlockState(pos);
 		
 		// Is the attached block a valid material?
-		if (block.getMaterial() == Material.clay) { return true; }
-		else if (block.getMaterial() == Material.cloth) { return true; }
-		else if (block.getMaterial() == Material.grass) { return true; }
-		else if (block.getMaterial() == Material.ground) { return true; }
-		else if (block.getMaterial() == Material.iron) { return true; }
-		else if (block.getMaterial() == Material.piston) { return true; }
-		else if (block.getMaterial() == Material.rock) { return true; }
-		else if (block.getMaterial() == Material.sand) { return true; }
-		else if (block.getMaterial() == Material.wood) { return true; }
-		else if (block.getMaterial() == Material.craftedSnow) { return true; }
-		else if (block.getMaterial() == Material.leaves) { return true; }
+		if (block.getMaterial(state) == Material.CLAY) { return true; }
+		else if (block.getMaterial(state) == Material.CLOTH) { return true; }
+		else if (block.getMaterial(state) == Material.GRASS) { return true; }
+		else if (block.getMaterial(state) == Material.GROUND) { return true; }
+		else if (block.getMaterial(state) == Material.IRON) { return true; }
+		else if (block.getMaterial(state) == Material.PISTON) { return true; }
+		else if (block.getMaterial(state) == Material.ROCK) { return true; }
+		else if (block.getMaterial(state) == Material.SAND) { return true; }
+		else if (block.getMaterial(state) == Material.WOOD) { return true; }
+		else if (block.getMaterial(state) == Material.CRAFTED_SNOW) { return true; }
+		else if (block.getMaterial(state) == Material.LEAVES) { return true; }
 		
 		// No?
 		return false;
@@ -475,55 +508,57 @@ public class Helper
 	
 	public static boolean canEntityBeSeen(World world, Entity observer, Entity entity)
 	{
-		return rayTraceBlocks(world, Vec3.createVectorHelper(observer.posX, observer.posY + observer.getEyeHeight(), observer.posZ),
-				Vec3.createVectorHelper(entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ)) == null;
+		return rayTraceBlocks(world, new Vec3d(observer.posX, observer.posY + observer.getEyeHeight(), observer.posZ),
+				new Vec3d(entity.posX, entity.posY + entity.getEyeHeight(), entity.posZ)) == null;
 	}
 	
 	
-	private static MovingObjectPosition rayTraceBlocks(World world, Vec3 p_72933_1_, Vec3 p_72933_2_)
+	private static RayTraceResult rayTraceBlocks(World world, Vec3d p_72933_1_, Vec3d p_72933_2_)
 	{
 		return getMovPosFromCollision(world, p_72933_1_, p_72933_2_, false, false, false);
 	}
 	
 	
-	private static MovingObjectPosition getMovPosFromCollision(World world, Vec3 observerPos, Vec3 targetPos, boolean p_147447_3_, boolean p_147447_4_, boolean p_147447_5_)
+	private static RayTraceResult getMovPosFromCollision(World world, Vec3d observerPos, Vec3d targetPos, boolean p_147447_3_, boolean p_147447_4_, boolean p_147447_5_)
 	{
-		if (!Double.isNaN(observerPos.xCoord) && !Double.isNaN(observerPos.yCoord) && !Double.isNaN(observerPos.zCoord))
+		if (!Double.isNaN(observerPos.x) && !Double.isNaN(observerPos.y) && !Double.isNaN(observerPos.z))
 		{
-			if (!Double.isNaN(targetPos.xCoord) && !Double.isNaN(targetPos.yCoord) && !Double.isNaN(targetPos.zCoord))
+			if (!Double.isNaN(targetPos.x) && !Double.isNaN(targetPos.y) && !Double.isNaN(targetPos.z))
 			{
-				int targetPosX = MathHelper.floor_double(targetPos.xCoord);
-				int targetPosY = MathHelper.floor_double(targetPos.yCoord);
-				int targetPosZ = MathHelper.floor_double(targetPos.zCoord);
+				int targetPosX = MathHelper.floor(targetPos.x);
+				int targetPosY = MathHelper.floor(targetPos.y);
+				int targetPosZ = MathHelper.floor(targetPos.z);
 				
-				int observerPosX = MathHelper.floor_double(observerPos.xCoord);
-				int observerPosY = MathHelper.floor_double(observerPos.yCoord);
-				int observerPosZ = MathHelper.floor_double(observerPos.zCoord);
+				int observerPosX = MathHelper.floor(observerPos.x);
+				int observerPosY = MathHelper.floor(observerPos.y);
+				int observerPosZ = MathHelper.floor(observerPos.z);
 				
-				Block block = world.getBlock(observerPosX, observerPosY, observerPosZ);
-				int blockMeta = world.getBlockMetadata(observerPosX, observerPosY, observerPosZ);
+				BlockPos observerBlockPos = new BlockPos(observerPosX, observerPosY, observerPosZ);
+				
+				Block block = world.getBlockState(observerBlockPos).getBlock();
+				IBlockState blockMeta = world.getBlockState(observerBlockPos);
 
 				boolean skip = false;
 				
-				if (block.getCollisionBoundingBoxFromPool(world, observerPosX, observerPosY, observerPosZ) == null) { skip = true; }	// Has no collision box
+				if (block.getCollisionBoundingBox(blockMeta, world, observerBlockPos) == null) { skip = true; }	// Has no collision box
 				else if (!block.canCollideCheck(blockMeta, p_147447_3_)) { skip = true; }						// Doesn't like being collided with
-				else if (block.getMaterial() == Material.glass) { skip = true; }						// Is glass, which we can see through
-				else if (block == Blocks.glass) { skip = true; }										// Is the actual glass block
-				else if (block == Blocks.glass_pane) { skip = true; }									// Same for glass panes
+				else if (block.getMaterial(blockMeta) == Material.GLASS) { skip = true; }						// Is glass, which we can see through
+				else if (block == Blocks.GLASS) { skip = true; }										// Is the actual glass block
+				else if (block == Blocks.GLASS_PANE) { skip = true; }									// Same for glass panes
 				
 				if (!skip)
 				{
-					MovingObjectPosition movingobjectposition = block.collisionRayTrace(world, observerPosX, observerPosY, observerPosZ, observerPos, targetPos);
+					RayTraceResult movingobjectposition = block.collisionRayTrace(blockMeta, world, observerBlockPos, observerPos, targetPos);
 
 					if (movingobjectposition != null) { return movingobjectposition; }
 				}
 
-				MovingObjectPosition movPos2 = null;
-				blockMeta = 200;
+				RayTraceResult movPos2 = null;
+				int count = 200;
 
-				while (blockMeta-- >= 0)
+				while (count-- >= 0)
 				{
-					if (Double.isNaN(observerPos.xCoord) || Double.isNaN(observerPos.yCoord) || Double.isNaN(observerPos.zCoord)) { return null; }
+					if (Double.isNaN(observerPos.x) || Double.isNaN(observerPos.y) || Double.isNaN(observerPos.z)) { return null; }
 
 					if (observerPosX == targetPosX && observerPosY == targetPosY && observerPosZ == targetPosZ)
 					{
@@ -553,13 +588,13 @@ public class Helper
 					double d4 = 999.0D;
 					double d5 = 999.0D;
 					
-					double d6 = targetPos.xCoord - observerPos.xCoord;
-					double d7 = targetPos.yCoord - observerPos.yCoord;
-					double d8 = targetPos.zCoord - observerPos.zCoord;
+					double d6 = targetPos.x - observerPos.x;
+					double d7 = targetPos.y - observerPos.y;
+					double d8 = targetPos.z - observerPos.z;
 
-					if (flag6) { d3 = (d0 - observerPos.xCoord) / d6; }
-					if (flag3) { d4 = (d1 - observerPos.yCoord) / d7; }
-					if (flag4) { d5 = (d2 - observerPos.zCoord) / d8; }
+					if (flag6) { d3 = (d0 - observerPos.x) / d6; }
+					if (flag3) { d4 = (d1 - observerPos.y) / d7; }
+					if (flag4) { d5 = (d2 - observerPos.z) / d8; }
 
 					boolean flag5 = false;
 					byte sideHit;
@@ -569,70 +604,69 @@ public class Helper
 						if (targetPosX > observerPosX) { sideHit = 4; }
 						else { sideHit = 5; }
 
-						observerPos.xCoord = d0;
-						observerPos.yCoord += d7 * d3;
-						observerPos.zCoord += d8 * d3;
+						observerPos.addVector((d0-observerPos.x), (d7*d3), (d8*d3));
+					
 					}
 					else if (d4 < d5)
 					{
 						if (targetPosY > observerPosY) { sideHit = 0; }
 						else { sideHit = 1; }
 
-						observerPos.xCoord += d6 * d4;
-						observerPos.yCoord = d1;
-						observerPos.zCoord += d8 * d4;
+						observerPos.addVector((d6*d4), (d1-observerPos.y), (d8*d4));
+						
 					}
 					else
 					{
 						if (targetPosZ > observerPosZ) { sideHit = 2; }
 						else { sideHit = 3; }
 
-						observerPos.xCoord += d6 * d5;
-						observerPos.yCoord += d7 * d5;
-						observerPos.zCoord = d2;
+						observerPos.addVector((d6*d5), (d7*d5), (d2-observerPos.z));
+						
+					
 					}
 
-					Vec3 vec32 = Vec3.createVectorHelper(observerPos.xCoord, observerPos.yCoord, observerPos.zCoord);
-					observerPosX = (int)(vec32.xCoord = MathHelper.floor_double(observerPos.xCoord));
+					Vec3d vec32 = new Vec3d(MathHelper.floor(observerPos.x), MathHelper.floor(observerPos.y), MathHelper.floor(observerPos.z));
+					observerPosX = (int)(vec32.x);
 
 					if (sideHit == 5)
 					{
 						--observerPosX;
-						++vec32.xCoord;
+						vec32.addVector(1, 0, 0);
 					}
 
-					observerPosY = (int)(vec32.yCoord = MathHelper.floor_double(observerPos.yCoord));
+					observerPosY = (int)(vec32.y);
 
 					if (sideHit == 1)
 					{
 						--observerPosY;
-						++vec32.yCoord;
+						vec32.addVector(0, 1, 0);
 					}
 
-					observerPosZ = (int)(vec32.zCoord = MathHelper.floor_double(observerPos.zCoord));
+					observerPosZ = (int)(vec32.z);
 
 					if (sideHit == 3)
 					{
 						--observerPosZ;
-						++vec32.zCoord;
+						vec32.addVector(0, 0, 1);
 					}
 
-					Block block1 = world.getBlock(observerPosX, observerPosY, observerPosZ);
-					int block1meta = world.getBlockMetadata(observerPosX, observerPosY, observerPosZ);
+					
+					IBlockState block1meta = world.getBlockState(observerBlockPos);
+					Block block1 = block1meta.getBlock();
 					
 					skip = false;
 					
-					if (block1.getCollisionBoundingBoxFromPool(world, observerPosX, observerPosY, observerPosZ) == null) { skip = true; }	// Has no collision box
+					if (block1.getCollisionBoundingBox(block1meta, world, observerBlockPos) == null) { skip = true; }	// Has no collision box
 					//else if (!block1.canCollideCheck(l1, p_147447_3_)) { skip = true; }						// Doesn't like being collided with
-					else if (block1.getMaterial() == Material.glass) { skip = true; }						// Is glass, which we can see through
-					else if (block1 == Blocks.glass) { skip = true; }										// Is the actual glass block
-					else if (block1 == Blocks.glass_pane) { skip = true; }									// Same for glass panes
+					else if (block1.getMaterial(block1meta) == Material.GLASS) { skip = true; }						// Is glass, which we can see through
+					else if (block1 == Blocks.GRASS) { skip = true; }										// Is the actual glass block
+					else if (block1 == Blocks.GLASS_PANE) { skip = true; }									// Same for glass panes
 
 					if (!skip)
 					{
 						if (block1.canCollideCheck(block1meta, p_147447_3_))
 						{
-							MovingObjectPosition movPos1 = block1.collisionRayTrace(world, observerPosX, observerPosY, observerPosZ, observerPos, targetPos);
+							RayTraceResult movPos1 = block1.collisionRayTrace(block1meta, world, observerBlockPos, observerPos, targetPos);
 
 							if (movPos1 != null)
 							{
@@ -641,7 +675,7 @@ public class Helper
 						}
 						else
 						{
-							movPos2 = new MovingObjectPosition(observerPosX, observerPosY, observerPosZ, sideHit, observerPos, false);
+							// movPos2 = new RayTraceResult(world, observerBlockPos, sideHit, observerPos, false);
 						}
 					}
 				}
@@ -660,62 +694,60 @@ public class Helper
 		if (target == null) { return false; }	// Can't see what doesn't exist
 		if (target instanceof EntityPlayer && ((EntityPlayer) target).capabilities.isCreativeMode) { return false; }	// Shortcut: Never target creative mode players
 		
-		Vec3 observerPos = Vec3.createVectorHelper(observer.posX, observer.posY + observer.getEyeHeight(), observer.posZ);
-		Vec3 targetPos = Vec3.createVectorHelper(target.posX, target.posY + target.getEyeHeight(), target.posZ);
+		Vec3d observerPos = new Vec3d(observer.posX, observer.posY + observer.getEyeHeight(), observer.posZ);
+		Vec3d targetPos = new Vec3d(target.posX, target.posY + target.getEyeHeight(), target.posZ);
 		
 		// Validation, it seems
-		if (Double.isNaN(observerPos.xCoord)) { return false; }
-		else if (Double.isNaN(observerPos.yCoord)) { return false; }
-		else if (Double.isNaN(observerPos.zCoord)) { return false; }
+		if (Double.isNaN(observerPos.x)) { return false; }
+		else if (Double.isNaN(observerPos.y)) { return false; }
+		else if (Double.isNaN(observerPos.z)) { return false; }
 		
-		else if (Double.isNaN(targetPos.xCoord)) { return false; }
-		else if (Double.isNaN(targetPos.yCoord)) { return false; }
-		else if (Double.isNaN(targetPos.zCoord)) { return false; }
+		else if (Double.isNaN(targetPos.x)) { return false; }
+		else if (Double.isNaN(targetPos.y)) { return false; }
+		else if (Double.isNaN(targetPos.z)) { return false; }
 		
-		int startPosX = MathHelper.floor_double(observerPos.xCoord);
-		int startPosY = MathHelper.floor_double(observerPos.yCoord);
-		int startPosZ = MathHelper.floor_double(observerPos.zCoord);
+		int startPosX = MathHelper.floor(observerPos.x);
+		int startPosY = MathHelper.floor(observerPos.y);
+		int startPosZ = MathHelper.floor(observerPos.z);
 		
-		int targetPosX = MathHelper.floor_double(targetPos.xCoord);
-		int targetPosY = MathHelper.floor_double(targetPos.yCoord);
-		int targetPosZ = MathHelper.floor_double(targetPos.zCoord);
+		int targetPosX = MathHelper.floor(targetPos.x);
+		int targetPosY = MathHelper.floor(targetPos.y);
+		int targetPosZ = MathHelper.floor(targetPos.z);
 		
 		int currentPosX = startPosX;
 		int currentPosY = startPosY;
 		int currentPosZ = startPosZ;
-		
+		BlockPos currentBlockPos = new BlockPos(currentPosX, currentPosY, currentPosZ);
 		boolean hasReachedTarget = false;
 		
 		int blockCount = 0;
 		
 		Block currentBlock;
-		int metadata;
+		IBlockState currentBlockState;
 		
-		MovingObjectPosition movPos;
+		RayTraceResult movPos;
 		
 		System.out.println("[ARMS ASSISTANT] Checking line of sight against target -> " + target);
 		
 		// Only counting a certain number of blocks
 		while (!hasReachedTarget && blockCount < 200)
 		{
-			currentBlock = world.getBlock(currentPosX, currentPosY, currentPosZ);
-			metadata = world.getBlockMetadata(currentPosX, currentPosY, currentPosZ);
+			currentBlockState = world.getBlockState(new BlockPos(currentPosX, currentPosY, currentPosZ));
+			currentBlock = currentBlockState.getBlock();
 			
 			boolean skip = false;	// Reset
 			
-			if (currentBlock.getCollisionBoundingBoxFromPool(world, currentPosX, currentPosY, currentPosZ) == null) { skip = true; }	// Has no collision box
-			else if (!currentBlock.canCollideCheck(metadata, false)) { skip = true; }	// Doesn't like being collided with
-			else if (currentBlock.getMaterial() == Material.glass) { skip = true; }		// Is glass, which we can see through
-			else if (currentBlock == Blocks.glass) { skip = true; }						// Is the actual glass block
-			else if (currentBlock == Blocks.glass_pane) { skip = true; }				// Same for glass panes
+			if (currentBlock.getBoundingBox(currentBlockState, world, new BlockPos(currentPosX, currentPosY, currentPosZ)) == null) { skip = true; }	// Has no collision box
+			else if (!currentBlock.canCollideCheck(currentBlockState, false)) { skip = true; }	// Doesn't like being collided with
+			else if (currentBlock.getMaterial(currentBlockState) == Material.GLASS) { skip = true; }		// Is glass, which we can see through
+			else if (currentBlock == Blocks.GLASS) { skip = true; }						// Is the actual glass block
+			else if (currentBlock == Blocks.GLASS_PANE) { skip = true; }				// Same for glass panes
 			
 			if (!skip)	// Checks out
 			{
 				movPos = currentBlock.collisionRayTrace(
-						world,
-						currentPosX,
-						currentPosY,
-						currentPosZ,
+						currentBlockState, world,
+						currentBlockPos,
 						observerPos,
 						targetPos
 						);

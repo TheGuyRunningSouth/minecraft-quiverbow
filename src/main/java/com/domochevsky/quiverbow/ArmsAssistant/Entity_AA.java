@@ -1,5 +1,5 @@
 package com.domochevsky.quiverbow.ArmsAssistant;
-
+/*
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -7,14 +7,18 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 import net.minecraftforge.common.ForgeHooks;
 
@@ -92,14 +96,14 @@ public class Entity_AA extends EntityLiving
 	public Entity_AA(World world) // Generic, for use on client side
 	{
 		super(world);
-		this.renderDistanceWeight = 10.0d;
+		this.setRenderDistanceWeight(10.0d);
 		
 		this.height = 1.65f;
-		this.boundingBox.setBounds(-0.5d, 0.0d, -0.5d, 0.5d, this.height, 0.5d);
+		//this.getEntityBoundingBox().setBounds(-0.5d, 0.0d, -0.5d, 0.5d, this.height, 0.5d);
 		
 		this.setCanPickUpLoot(false);
 		
-		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(this.movementSpeed);
+		this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(this.movementSpeed);
 		
 		//if (!world.isRemote) { AI_RandomEquip.setupGear(this); }	// Hand me my gear! 
 	}
@@ -109,14 +113,14 @@ public class Entity_AA extends EntityLiving
 	{
 		super(world);
 		
-		this.renderDistanceWeight = 10.0d;
+		this.setRenderDistanceWeight(10.0d);
 		
 		if (player != null)
 		{
-			this.ownerName = player.getDisplayName();
+			this.ownerName = player.getDisplayName().toString();
 			
 			this.setPositionAndRotation(player.posX, player.posY, player.posZ, player.cameraYaw, player.cameraPitch);
-			this.worldObj.playSoundAtEntity(this, "random.anvil_land", 0.7f, 1.5f);
+			this.playSound(SoundEvents.BLOCK_ANVIL_LAND, 0.7f, 1.5f);
 		}
 		else
 		{
@@ -124,11 +128,11 @@ public class Entity_AA extends EntityLiving
 		}
 		
 		this.height = 1.65f;
-		this.boundingBox.setBounds(-0.5d, 0.0d, -0.5d, 0.5d, this.height, 0.5d);
+		//this.getEntityBoundingBox().setBounds(-0.5d, 0.0d, -0.5d, 0.5d, this.height, 0.5d);
 		
 		this.setCanPickUpLoot(false);
 		
-		this.getEntityAttribute(SharedMonsterAttributes.movementSpeed).setBaseValue(this.movementSpeed);
+		this.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED).setBaseValue(this.movementSpeed);
 	}
 	
 	
@@ -140,8 +144,8 @@ public class Entity_AA extends EntityLiving
     }
 	
 	
-	@Override
-	protected boolean isAIEnabled() { return true; }
+	//@Override
+	//protected boolean isAIEnabled() { return true; }
 	
 	@Override
 	public float getAIMoveSpeed() { return (float) this.movementSpeed; }
@@ -156,7 +160,7 @@ public class Entity_AA extends EntityLiving
 	
 	
 	@Override
-	public AxisAlignedBB getCollisionBox(Entity entity) { return this.boundingBox; }
+	public AxisAlignedBB getCollisionBox(Entity entity) { return this.getEntityBoundingBox(); }
 
 	
 	@Override
@@ -168,9 +172,9 @@ public class Entity_AA extends EntityLiving
     {
 		super.onLivingUpdate();
 		
-		if (this.worldObj.isRemote) { return; }	// Not doing this on client side
+		if (this.world.isRemote) { return; }	// Not doing this on client side
 		
-		this.riddenThisTick = this.hasRidingUpgrade && this.riddenByEntity != null;
+		this.riddenThisTick = this.hasRidingUpgrade && this.getRidingEntity() != null;
 		
 		this.sendState();
 		this.tickWeapons();
@@ -210,7 +214,7 @@ public class Entity_AA extends EntityLiving
 	        {
 	            this.motionY *= 0.2D;	// Slowfall
 	        }
-		}*/
+		}* /
 		
 		// Keeping track
 		this.wasRiddenLastTick = this.riddenThisTick;
@@ -243,24 +247,24 @@ public class Entity_AA extends EntityLiving
 		if (this.firstAttackDelay > 0) { this.firstAttackDelay -= 1; }
 		if (this.secondAttackDelay > 0) { this.secondAttackDelay -= 1; }
 		
-		if (this.firstWeapon != null && this.getEquipmentInSlot(0) != null)
+		if (this.firstWeapon != null && this.getHeldItemMainhand() != null)
 		{
-			if (this.firstWeapon.getBurstFire(this.getHeldItem()) > 0)	// Doing burst fire right now. Adjust your viewing angle
+			if (this.firstWeapon.getBurstFire(this.getHeldItemMainhand()) > 0)	// Doing burst fire right now. Adjust your viewing angle
 			{
 				this.faceTarget(this.currentTarget, 30f, 30f);
 			}
 			
-			this.firstWeapon.onUpdate(this.getHeldItem(), this.worldObj, this, this.ticksExisted, true);	// For cooldown and burst
+			this.firstWeapon.onUpdate(this.getHeldItemMainhand(), this.world, this, this.ticksExisted, true);	// For cooldown and burst
 		}
 		
-		if (this.secondWeapon != null && this.getEquipmentInSlot(1) != null)
+		if (this.secondWeapon != null && this.getHeldItemOffhand() != null)
 		{
-			if (this.secondWeapon.getBurstFire(this.getEquipmentInSlot(1)) > 0)	// Doing burst fire right now. Adjust your viewing angle
+			if (this.secondWeapon.getBurstFire(this.getHeldItemOffhand()) > 0)	// Doing burst fire right now. Adjust your viewing angle
 			{
 				this.faceTarget(this.currentTarget, 30f, 30f);
 			}
 			
-			this.secondWeapon.onUpdate(this.getEquipmentInSlot(1), this.worldObj, this, this.ticksExisted, true);	// For cooldown and burst
+			this.secondWeapon.onUpdate(this.getHeldItemOffhand(), this.world, this, this.ticksExisted, true);	// For cooldown and burst
 		}
 	}
 	
@@ -271,14 +275,14 @@ public class Entity_AA extends EntityLiving
 		
 		if (AI_Targeting.isNameOnWhitelist(this, Commands.cmdFireRemote))	// Told to fire together with them, so doing that
 		{
-			EntityPlayer owner = this.worldObj.getPlayerEntityByName(this.ownerName);
+			EntityPlayer owner = this.world.getPlayerEntityByName(this.ownerName);
 			
 			if (owner != null) 
 			{ 
-				if (owner.getHeldItem() != null && owner.getHeldItem().getItem() instanceof AA_Targeter)
+				if (owner.getHeldItem(swingingHand) != null && owner.getHeldItem(swingingHand).getItem() instanceof AA_Targeter)
 				{
-					AA_Targeter weapon = (AA_Targeter) owner.getHeldItem().getItem();
-					MovingObjectPosition movPos = AI_Targeting.getMovingObjectPositionFromPlayer(this.worldObj, owner, weapon.targetingDistance);
+					AA_Targeter weapon = (AA_Targeter) owner.getHeldItem(swingingHand).getItem();
+					RayTraceResult movPos = AI_Targeting.getMovingObjectPositionFromPlayer(this.world, owner, weapon.targetingDistance);
 					
 					if (movPos != null)
 					{
@@ -290,12 +294,12 @@ public class Entity_AA extends EntityLiving
 						}
 						else	// Hit a block
 						{
-							this.faceTargetBlock(movPos.blockX, movPos.blockY, movPos.blockZ);
+							this.faceTargetBlock(movPos.getBlockPos().getX(), movPos.getBlockPos().getY(), movPos.getBlockPos().getZ());
 						}
 					}
 					// else, not looking at anything tangible, hm?
 					
-					if (weapon.getCooldown(owner.getHeldItem()) > 0) 
+					if (weapon.getCooldown(owner.getHeldItem(swingingHand)) > 0) 
 					{
 						this.fireWeapons(true); // Fire with reckless abandon!
 					}
@@ -349,10 +353,10 @@ public class Entity_AA extends EntityLiving
         }
         else
         {
-            distanceY = (target.boundingBox.minY + target.boundingBox.maxY) / 2.0D + VelY - (this.posY + (double) this.getEyeHeight());
+            distanceY = (target.getEntityBoundingBox().minY + target.getEntityBoundingBox().maxY) / 2.0D + VelY - (this.posY + (double) this.getEyeHeight());
         }
 
-        double distanceSqr = (double)MathHelper.sqrt_double(distanceX * distanceX + distanceZ * distanceZ);
+        double distanceSqr = (double)MathHelper.sqrt(distanceX * distanceX + distanceZ * distanceZ);
         float targetYaw = (float)(Math.atan2(distanceZ, distanceX) * 180.0D / Math.PI) - 90.0F;
         float targetPitch = (float)(-(Math.atan2(distanceY, distanceSqr) * 180.0D / Math.PI));
        
@@ -367,7 +371,7 @@ public class Entity_AA extends EntityLiving
         double distanceZ = posZ - this.posZ;
         double distanceY = posY - this.posY;
 
-        double distanceSqr = (double)MathHelper.sqrt_double(distanceX * distanceX + distanceZ * distanceZ);
+        double distanceSqr = (double)MathHelper.sqrt(distanceX * distanceX + distanceZ * distanceZ);
         float targetYaw = (float)(Math.atan2(distanceZ, distanceX) * 180.0D / Math.PI) - 90.0F;
         float targetPitch = (float)(-(Math.atan2(distanceY, distanceSqr) * 180.0D / Math.PI));
        
@@ -380,7 +384,7 @@ public class Entity_AA extends EntityLiving
 	
 	public float updateRotation(float p_70663_1_, float p_70663_2_, float speed)
     {
-        float f3 = MathHelper.wrapAngleTo180_float(p_70663_2_ - p_70663_1_);
+        float f3 = MathHelper.wrapDegrees(p_70663_2_ - p_70663_1_);
 
         if (f3 > speed) { f3 = speed; }
         if (f3 < -speed) { f3 = -speed; }
@@ -390,11 +394,11 @@ public class Entity_AA extends EntityLiving
 	
 	
 	@Override
-	protected void updateEntityActionState()
+	public void updateEntityActionState()
     {
-		if (this.hasRidingUpgrade && this.riddenByEntity != null) // Not looking around idle, since we're being ridden
+		if (this.hasRidingUpgrade && this.getRidingEntity() != null) // Not looking around idle, since we're being ridden
 		{ 
-			EntityLivingBase rider = (EntityLivingBase) this.riddenByEntity;
+			EntityLivingBase rider = (EntityLivingBase) this.getRidingEntity();
 			
 			// Look where the rider is looking
 			this.rotationPitch = this.updateRotation(this.rotationPitch, rider.rotationPitch, 30.0f);
@@ -415,7 +419,7 @@ public class Entity_AA extends EntityLiving
         this.rotationYaw += this.randomYawVelocity;
         this.rotationPitch = this.defaultPitch;
 
-        if (this.isInWater() || this.handleLavaMovement()) { this.isJumping = this.rand.nextFloat() < 0.8F; }
+        if (this.isInWater() || this.handleWaterMovement()) { this.isJumping = this.rand.nextFloat() < 0.8F; }
     }
 	
 	
@@ -438,16 +442,16 @@ public class Entity_AA extends EntityLiving
 	{
 		if (this.posX == this.lastTickPosX && this.posY == this.lastTickPosY && this.posZ == this.lastTickPosZ) { return; }	// Still in the same position
 		
-		NetHelper.sendPositionMessageToPlayersInRange(this.worldObj, this, this.posX, this.posY, this.posZ);	// We are mobile, so keeping players informed about our position
+		NetHelper.sendPositionMessageToPlayersInRange(this.world, this, this.posX, this.posY, this.posZ);	// We are mobile, so keeping players informed about our position
 	}
 	
 	
 	@Override
-	public boolean interact(EntityPlayer player)
+	public boolean processInteract(EntityPlayer player, EnumHand hand)
     {
-		if (this.worldObj.isRemote) { return true; }	// Client side. Doesn't have the same info, so makes a different decision. Ugh.
+		if (this.world.isRemote) { return true; }	// Client side. Doesn't have the same info, so makes a different decision. Ugh.
 														// They'll just shoot when trying to equip this with a weapon
-		if (!player.getDisplayName().equals(this.ownerName)) { return false; }	// Not the owner, so not doing this
+		if (!player.getDisplayName().toString().equals(this.ownerName)) { return false; }	// Not the owner, so not doing this
 		
 		ItemStack itemstack = player.inventory.getCurrentItem();
 		
@@ -471,7 +475,7 @@ public class Entity_AA extends EntityLiving
 			}
 			else if (this.hasRidingUpgrade)	// Not sneaking and we have the riding upgrade, so the owner can giddy up
 	        {
-				player.mountEntity(this);	
+				player.startRiding(this);	
 	            return true;
 	        }
 			
@@ -481,7 +485,7 @@ public class Entity_AA extends EntityLiving
 		// Holding a weapon
 		else if (itemstack.getItem() instanceof _WeaponBase) 
 		{
-			if (!player.capabilities.isCreativeMode) { player.setCurrentItemOrArmor(0, null); }	// Taking that
+			if (!player.capabilities.isCreativeMode) { player.setHeldItem(EnumHand.MAIN_HAND, itemstack.EMPTY); }	// Taking that
 			
 			if (this.hasWeaponUpgrade && player.isSneaking())
 			{
@@ -495,12 +499,12 @@ public class Entity_AA extends EntityLiving
 			return true;
 		}
 		
-		else if (itemstack.getItem() == Item.getItemFromBlock(Blocks.iron_block)) // Holding repair material
+		else if (itemstack.getItem() == Item.getItemFromBlock(Blocks.IRON_BLOCK)) // Holding repair material
 		{
 			AI_Properties.doRepair(player, this, itemstack);
 		}
 		
-		else if (itemstack.getItem() == Items.name_tag) // Holding a name tag
+		else if (itemstack.getItem() == Items.NAME_TAG) // Holding a name tag
 		{
 			AI_Properties.applyNameTag(player, this, itemstack, true);
 		}
@@ -519,16 +523,18 @@ public class Entity_AA extends EntityLiving
 	public void onDeath(DamageSource dmg)
     {
         if (ForgeHooks.onLivingDeath(this, dmg)) return;
-        Entity entity = dmg.getEntity();
-        EntityLivingBase entitylivingbase = this.func_94060_bK();
+        Entity entity = dmg.getTrueSource();
+        EntityLivingBase entitylivingbase = this.getAttackingEntity();
+        if (this.getAttackingEntity() instanceof EntityPlayer)
+        
 
-        if (this.scoreValue >= 0 && entitylivingbase != null) { entitylivingbase.addToPlayerScore(this, this.scoreValue); }
+        //if (this.scoreValue >= 0 && entitylivingbase != null && entitylivingbase instanceof EntityPlayer) { entity.addPlayerScore(this, this.scoreValue); }
 
         if (entity != null) { entity.onKillEntity(this); }	// Informing the killer about this
         
-        this.worldObj.playSoundAtEntity(this, "random.break", 0.8f, 0.3f);
+        this.world.playSound(this.posX, this.posY, this.posZ, SoundEvents.BLOCK_ANVIL_BREAK, SoundCategory.BLOCKS, 0.8f, 0.3f, true);
 
-        if (!this.worldObj.isRemote)	// Spill it all (server-side)
+        if (!this.world.isRemote)	// Spill it all (server-side)
         {
         	AI_Storage.dropFirstWeapon(this);
         	if (this.hasWeaponUpgrade) { AI_Storage.dropSecondWeapon(this); }
@@ -542,19 +548,19 @@ public class Entity_AA extends EntityLiving
         }
         
         this.dead = true;
-        this.func_110142_aN().func_94549_h();
+        this.getCombatTracker().reset();
 
-        this.worldObj.setEntityState(this, (byte) 3);
+        this.world.setEntityState(this, (byte) 3);
     }
 	
 	
 	@Override
-	protected String getHurtSound()
+	protected SoundEvent getHurtSound(DamageSource damageSourceIn)
     {
-        return "random.anvil_land";
+        return SoundEvents.BLOCK_ANVIL_FALL;
     }
 	
-	
+
 	@Override
 	public boolean canBeSteered()
     {
@@ -565,7 +571,7 @@ public class Entity_AA extends EntityLiving
 	@Override
 	protected void damageEntity(DamageSource dmgSource, float dmg)
     {
-		if (this.isEntityInvulnerable()) { return; }	// Nothing to be done here
+		if (this.isEntityInvulnerable(dmgSource)) { return; }	// Nothing to be done here
         
         dmg = ForgeHooks.onLivingHurt(this, dmgSource, dmg);
         if (dmg <= 0) return;
@@ -593,12 +599,12 @@ public class Entity_AA extends EntityLiving
         {
             float health = this.getHealth();
             this.setHealth(health - dmg);
-            this.func_110142_aN().func_94547_a(dmgSource, health, dmg);
+            this.getCombatTracker().trackDamage(dmgSource, health, dmg);
             this.setAbsorptionAmount(this.getAbsorptionAmount() - dmg);
         }
         // else, damage is 0. Nothing to be done here
         
-        if (!this.worldObj.isRemote && this.getHealth() < this.getMaxHealth() / 3)
+        if (!this.world.isRemote && this.getHealth() < this.getMaxHealth() / 3)
         {
         	// Has less than a third health left
         	if (this.hasCommunicationUpgrade && AI_Targeting.isNameOnWhitelist(this, Commands.cmdTellHealth))
@@ -614,7 +620,7 @@ public class Entity_AA extends EntityLiving
     {
 		super.writeEntityToNBT(tag);
 		
-		if (this.worldObj.isRemote) { return; }	// Not doing the rest on client side
+		if (this.world.isRemote) { return; }	// Not doing the rest on client side
 		
 		tag.setString("owner", this.ownerName);
 		tag.setDouble("movementSpeed", this.movementSpeed);
@@ -625,13 +631,13 @@ public class Entity_AA extends EntityLiving
 		if (this.hasFirstWeapon) 
 		{ 
 			tag.setInteger("firstWeapon", Main.weapons.indexOf(this.firstWeapon)); 
-			tag.setInteger("firstAmmo", this.firstWeapon.getDamage(this.getHeldItem()));
+			tag.setInteger("firstAmmo", this.firstWeapon.getDamage(this.getHeldItemMainhand()));
 		}
 		
 		if (this.hasSecondWeapon) 
 		{ 
 			tag.setInteger("secondWeapon", Main.weapons.indexOf(this.secondWeapon)); 
-			tag.setInteger("secondAmmo", this.secondWeapon.getDamage(this.getEquipmentInSlot(1)));
+			tag.setInteger("secondAmmo", this.secondWeapon.getDamage(this.getHeldItemOffhand()));
 		}
 		
 		tag.setBoolean("hasArmorUpgrade", this.hasArmorUpgrade);
@@ -673,7 +679,7 @@ public class Entity_AA extends EntityLiving
     {
 		super.readEntityFromNBT(tag);
 		
-		if (this.worldObj.isRemote) { return; }	// Not doing the rest on client side
+		if (this.world.isRemote) { return; }	// Not doing the rest on client side
 		
 		this.ownerName = tag.getString("owner");
 		this.movementSpeed = tag.getDouble("movementSpeed");
@@ -695,9 +701,9 @@ public class Entity_AA extends EntityLiving
 			this.firstWeapon = Main.weapons.get(tag.getInteger("firstWeapon"));
 			AI_WeaponHandler.setFirstWeapon(this, new ItemStack(Main.weapons.get(tag.getInteger("firstWeapon"))));
 			
-			if (this.getHeldItem() != null)
+			if (this.getHeldItemMainhand() != null)
 			{
-				this.getHeldItem().setItemDamage(tag.getInteger("firstAmmo"));	// restoring known ammo
+				this.getHeldItemMainhand().setItemDamage(tag.getInteger("firstAmmo"));	// restoring known ammo
 			}
 		}
 
@@ -709,9 +715,9 @@ public class Entity_AA extends EntityLiving
 		{
 			AI_WeaponHandler.setSecondWeapon(this, new ItemStack(Main.weapons.get(tag.getInteger("secondWeapon"))));
 			
-			if (this.getHeldItem() != null)
+			if (this.getHeldItemMainhand() != null)
 			{
-				this.getHeldItem().setItemDamage(tag.getInteger("firstAmmo"));	// restoring known ammo
+				this.getHeldItemMainhand().setItemDamage(tag.getInteger("firstAmmo"));	// restoring known ammo
 			}
 		}
 		
@@ -736,3 +742,4 @@ public class Entity_AA extends EntityLiving
 		this.stationaryZ = tag.getDouble("stationaryZ");
     }
 }
+*/

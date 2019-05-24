@@ -2,19 +2,27 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.entity.projectile.EntityArrow.PickupStatus;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.EnumAction;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
@@ -22,12 +30,13 @@ import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraftforge.event.entity.player.ArrowNockEvent;
 
 import com.domochevsky.quiverbow.Main;
+import com.domochevsky.quiverbow.projectiles.EntityNormalArrow;
 import com.domochevsky.quiverbow.projectiles.ScopedPredictive;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class EnderBow extends _WeaponBase 	// So archaic... I may have to overhaul this at some point. There's nothing standard about this
 {
@@ -36,7 +45,7 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 	private String nameInternal = "Ender Bow";
 	
 	//public String[] bowPullIconNameArray = new String[] {"pulling_0", "pulling_1", "pulling_2"};
-	
+	/*
 	@SideOnly(Side.CLIENT)
     private IIcon pull_0;
 	
@@ -49,7 +58,7 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 	
 	//@SideOnly(Side.CLIENT)
 	//private IIcon[] iconArray;
-	
+	*/
 	private int shotCounter = 0;
 	
 	private String playerName = "";	// Holds the name of the firing player, so only they can see it firing
@@ -58,7 +67,7 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 	
 	private int defaultFOV;
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	@Override
     public void registerIcons(IIconRegister par1IconRegister)
@@ -102,20 +111,20 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
     {		
 		return this.itemIcon;
     }
-	
+	*/
 	
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-	    super.addInformation(stack, player, list, par4);
+	    super.addInformation(stack, world, list, flag);
 	    
 	    int ammo = this.getMaxDamage() - this.getDamage(stack);
 	    
-	    list.add(EnumChatFormatting.BLUE + "Durability: " + ammo + " / " + this.getMaxDamage());
+	    list.add(TextFormatting.BLUE + "Durability: " + ammo + " / " + this.getMaxDamage());
 	    
-	    list.add(EnumChatFormatting.GREEN + "Zoom on use.");
-	    list.add(EnumChatFormatting.GREEN + "Predictive arrow on use.");
+	    list.add(TextFormatting.GREEN + "Zoom on use.");
+	    list.add(TextFormatting.GREEN + "Predictive arrow on use.");
 	    
 	    list.add("An ender-eye scope is attached.");
 	    list.add("It's staring at you.");
@@ -140,12 +149,12 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 		if (Enabled)
         {
             // One ender bow, all ready
-            GameRegistry.addRecipe(new ItemStack(this), "zxy", "xay", "zxy",
-            		'x', Items.stick, 
-            		'y', Items.string, 
-            		'z', Items.ender_eye, 
-            		'a', Items.iron_ingot 
-            );
+          /*  GameRegistry.addRecipe(new ItemStack(this), "zxy", "xay", "zxy",
+            		'x', Items.STICK, 
+            		'y', Items.STRING, 
+            		'z', Items.ENDER_EYE, 
+            		'a', Items.IRON_INGOT 
+            );*/
         }
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 	}
@@ -154,12 +163,12 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 	@Override
 	public void onUpdate(ItemStack stack, World world, Entity entity, int par4, boolean par5) 
 	{		
-		if (stack.stackTagCompound == null) 
+		if (stack.getTagCompound() == null) 
 		{
-			stack.stackTagCompound = new NBTTagCompound();
+			stack.setTagCompound(new NBTTagCompound());
 			
-			stack.stackTagCompound.setBoolean("isZoomed", false);
-			stack.stackTagCompound.setInteger("defaultFOV", 0);	// FOV is now using full numbers. We're recording the current default FOV here
+			stack.getTagCompound().setBoolean("isZoomed", false);
+			stack.getTagCompound().setInteger("defaultFOV", 0);	// FOV is now using full numbers. We're recording the current default FOV here
 		}
 
 		// let's check zoom here
@@ -169,7 +178,7 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 
 			if (entityplayer.inventory.getCurrentItem() != null && entityplayer.inventory.getCurrentItem() == stack)	// Step 2, are they holding the bow?
 			{
-				if (entityplayer.isUsingItem()) // step 3, are they using the bow?
+				if (entityplayer.getActiveItemStack() == stack) // step 3, are they using the bow?
 				{
 					this.setCurrentZoom(stack, true); // We need to zoom in!
 					
@@ -185,7 +194,7 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 				    	}
 					}	
 					// else, server side. Has no deal with game settings
-					
+			
 				}
 				else // Not using this item currently
 				{
@@ -229,7 +238,7 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 		if (stack == null) { return; }	// Not a  valid item
 		if (!stack.hasTagCompound()) { return; } // No tag
 		
-		stack.stackTagCompound.setBoolean("isZoomed", zoom);
+		stack.getTagCompound().setBoolean("isZoomed", zoom);
 	}
 	
 	boolean isCurrentlyZoomed(ItemStack stack)
@@ -237,26 +246,27 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 		if (stack == null) { return false; }	// Not a  valid item
 		if (!stack.hasTagCompound()) { return false; } // No tag
 		
-		return stack.stackTagCompound.getBoolean("isZoomed");
+		return stack.getTagCompound().getBoolean("isZoomed");
 	}
     
     
     @Override
-    public void onPlayerStoppedUsing(ItemStack stack, World world, EntityPlayer player, int par4) 
+    public void onPlayerStoppedUsing(ItemStack stack, World world, EntityLivingBase entity, int par4) 
     {
+    	EntityPlayer player = (EntityPlayer)entity;
         int chargeTime = this.getMaxItemUseDuration(stack) - par4;
 
-        ArrowLooseEvent event = new ArrowLooseEvent(player, stack, chargeTime);
+        ArrowLooseEvent event = new ArrowLooseEvent(player, stack, world, chargeTime, true);
         MinecraftForge.EVENT_BUS.post(event);
         
         if (event.isCanceled()) { return; }	// Not having it
         
-        chargeTime = event.charge;
+        chargeTime = event.getCharge();
 
         // Either creative mode or infinity enchantment is higher than 0. Not using arrows
         boolean freeShot = player.capabilities.isCreativeMode;
 
-        if (freeShot || player.inventory.hasItemStack(new ItemStack(Items.arrow)) ) 
+        if (freeShot || player.inventory.hasItemStack(new ItemStack(Items.ARROW)) ) 
         {
             float f = (float) chargeTime / 20.0F;
             f = (f * f + f * 2.0F) / 3.0F;
@@ -264,17 +274,17 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
             if ((double)f < 0.1D) { return; }
             if (f > 1.0F) { f = 1.0F; }
 
-            EntityArrow entityarrow = new EntityArrow(world, player, f * 2.0F);
+            EntityArrow entityarrow = new EntityNormalArrow(world, player /*,f * 2.0F*/);
 
             if (f == 1.0F) { entityarrow.setIsCritical(true); }
 
             stack.damageItem(1, player);
-            world.playSoundAtEntity(player, "random.bow", 1.0F, 1.0F / (itemRand.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
+            world.playSound(player, player.getPosition(), SoundEvents.ENTITY_ARROW_SHOOT, null, 1.0F, 1.0F / (itemRand.nextFloat() * 0.4F + 1.2F) + f * 0.5F);
 
-            if (freeShot) { entityarrow.canBePickedUp = 2; }
-            else { player.inventory.consumeInventoryItem(Items.arrow); }
+            if (freeShot) { entityarrow.pickupStatus = PickupStatus.CREATIVE_ONLY; }
+            else { player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.ARROW))).shrink(1);}
 
-            if (!world.isRemote) { world.spawnEntityInWorld(entityarrow); }	// pew.
+            if (!world.isRemote) { world.spawnEntity(entityarrow); }	// pew.
         }
     }
 
@@ -284,25 +294,25 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
 
    
     @Override
-    public EnumAction getItemUseAction(ItemStack par1ItemStack) { return EnumAction.bow; }
+    public EnumAction getItemUseAction(ItemStack par1ItemStack) { return EnumAction.BOW; }
     
     
     @Override
-    public void onUsingTick(ItemStack stack, EntityPlayer player, int count)
+    public void onUsingTick(ItemStack stack, EntityLivingBase player, int count)
     {
     	float yaw = player.rotationYaw;
     	float pitch = player.rotationPitch;
-    	if (player.worldObj.isRemote) 
+    	if (player.world.isRemote) 
     	{
     		// The projectile is only allowed to shoot every X ticks, so we're gonna make this happen here
     		this.shotCounter += 1;
     		if (this.shotCounter >= Ticks) 
     		{
     			// Only allowing this to happen when the right player uses this
-    			if (player.getDisplayName() == this.playerName)
+    			if (player.getDisplayName().toString() == this.playerName)
     			{
-	    			ScopedPredictive entityarrow = new ScopedPredictive(player.worldObj, player, 2.0F * 1.5F);
-	    			player.worldObj.spawnEntityInWorld(entityarrow);
+	    			ScopedPredictive entityarrow = new ScopedPredictive(player.world, player, 2.0F * 1.5F);
+	    			player.world.spawnEntity(entityarrow);
     			}
     			this.shotCounter = 0;
     		}
@@ -311,31 +321,33 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
     
     
     @Override
-    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
     {
-        ArrowNockEvent event = new ArrowNockEvent(player, stack);
+    	ItemStack stack = player.getHeldItem(hand);
+        ArrowNockEvent event = new ArrowNockEvent(player, stack, EnumHand.MAIN_HAND, world, true);
         MinecraftForge.EVENT_BUS.post(event);
-        if (event.isCanceled()) { return event.result; }
+        if (event.isCanceled()) { return new ActionResult(EnumActionResult.SUCCESS, stack); } // Was event.result(). Wrong return type. May do weird crap
+        
 
-        if (player.capabilities.isCreativeMode || player.inventory.hasItemStack( new ItemStack(Items.arrow) ) )
+        if (player.capabilities.isCreativeMode || player.inventory.hasItemStack( new ItemStack(Items.ARROW) ) )
         {
-        	player.setItemInUse(stack, this.getMaxItemUseDuration(stack)); 
-        	this.playerName = player.getDisplayName();	// Recording the player name here, so only they can see the projectile
+        	//player.setItemInUse(stack, this.getMaxItemUseDuration(stack)); 
+        	this.playerName = player.getDisplayName().toString();	// Recording the player name here, so only they can see the projectile
         }
         
-        return stack;
+        return new ActionResult(EnumActionResult.PASS, stack);
     }
     
     
     @Override
     public boolean onDroppedByPlayer(ItemStack stack, EntityPlayer player)
     {
-    	stack.stackTagCompound.setBoolean("zoom", false);	// Dropped the bow
-    	stack.stackTagCompound.setFloat("currentzoom", 0);
+    	stack.getTagCompound().setBoolean("zoom", false);	// Dropped the bow
+    	stack.getTagCompound().setFloat("currentzoom", 0);
     	
-    	if (player.worldObj.isRemote) 
+    	if (player.world.isRemote) 
     	{											
-    		Minecraft.getMinecraft().gameSettings.fovSetting = stack.stackTagCompound.getFloat("zoomlevel");	// Begone with the zoom
+    		Minecraft.getMinecraft().gameSettings.fovSetting = stack.getTagCompound().getFloat("zoomlevel");	// Begone with the zoom
         }
     	
         return true;
@@ -344,8 +356,8 @@ public class EnderBow extends _WeaponBase 	// So archaic... I may have to overha
     
     @Override
 	@SideOnly(Side.CLIENT)
-	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
+	public void getSubItems(CreativeTabs par2CreativeTabs, NonNullList<ItemStack> list) 	// getSubItems
 	{
-		list.add(new ItemStack(item, 1, 0));
+		list.add(new ItemStack(this, 1, 0));
 	}
 }

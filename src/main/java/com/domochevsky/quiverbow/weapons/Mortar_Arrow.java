@@ -2,14 +2,19 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -19,10 +24,10 @@ import com.domochevsky.quiverbow.ammo.ArrowBundle;
 import com.domochevsky.quiverbow.net.NetHelper;
 import com.domochevsky.quiverbow.projectiles.Sabot_Arrow;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class Mortar_Arrow extends _WeaponBase
 {
@@ -30,7 +35,7 @@ public class Mortar_Arrow extends _WeaponBase
 
 	private String nameInternal = "Arrow Mortar";
 
-
+	/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -44,16 +49,17 @@ public class Mortar_Arrow extends _WeaponBase
 	{
 		return this.Icon; 	// Full, default
 	}
-
+	*/
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -74,10 +80,10 @@ public class Mortar_Arrow extends _WeaponBase
 		Sabot_Arrow projectile = new Sabot_Arrow(world, entity, (float) this.Speed);
 		projectile.damage = dmg;
 
-		world.spawnEntityInWorld(projectile); 	// Firing!
+		world.spawnEntity(projectile); 	// Firing!
 
 		// SFX
-		world.playSoundAtEntity(entity, "tile.piston.out", 1.0F, 2.0F);
+		entity.playSound(SoundEvents.BLOCK_PISTON_EXTEND, 1.0F, 2.0F);
 
 		NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 11, (byte) 1);
 
@@ -89,33 +95,33 @@ public class Mortar_Arrow extends _WeaponBase
 	@Override
 	void doCooldownSFX(World world, Entity entity) // Server side
 	{
-		world.playSoundAtEntity(entity, "random.click", 0.6F, 2.0F);
+		entity.playSound(SoundEvents.BLOCK_TRIPWIRE_CLICK_ON, 0.6F, 2.0F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Arrow Bundles: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Arrow Bundles: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Arrow Bundles: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Arrow Bundles: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per arrow.");
+		list.add(TextFormatting.BLUE + "Damage: " + this.DmgMin + " - " + this.DmgMax + " per arrow.");
 
-		list.add(EnumChatFormatting.GREEN + "Scatter 8 on impact.");
+		list.add(TextFormatting.GREEN + "Scatter 8 on impact.");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use.");
 
-		list.add(EnumChatFormatting.YELLOW + "Craft with up to 8 Arrow Bundles to reload.");
+		list.add(TextFormatting.YELLOW + "Craft with up to 8 Arrow Bundles to reload.");
 
 		list.add("Arrow tips are poking out of the barrel.");
 	}
@@ -145,13 +151,13 @@ public class Mortar_Arrow extends _WeaponBase
 		if (this.Enabled)
 		{
 			// One Arrow Mortar (Empty)
-			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ipi", "isr", "tsr",
-					't', Blocks.tripwire_hook,
-					'i', Items.iron_ingot,
-					's', Blocks.sticky_piston,
-					'p', Blocks.piston,
-					'r', Items.repeater
-					);
+			/*GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "ipi", "isr", "tsr",
+					't', Blocks.TRIPWIRE_HOOK,
+					'i', Items.IRON_INGOT,
+					's', Blocks.STICKY_PISTON,
+					'p', Blocks.PISTON,
+					'r', Items.REPEATER
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

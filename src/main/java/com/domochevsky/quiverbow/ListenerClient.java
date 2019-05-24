@@ -5,38 +5,38 @@ import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.event.RenderLivingEvent;
+import net.minecraftforge.client.event.RenderPlayerEvent;
 
 import com.domochevsky.quiverbow.weapons.EnderRifle;
 import com.domochevsky.quiverbow.weapons.FrostLancer;
 import com.domochevsky.quiverbow.weapons._WeaponBase;
 
-import cpw.mods.fml.common.eventhandler.EventPriority;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent.PlayerTickEvent;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.PlayerTickEvent;
 
 public class ListenerClient
 {
 	@SubscribeEvent(priority = EventPriority.LOW)
-	public void renderPlayerRightItemUsage(RenderLivingEvent.Pre event)
+	public void renderPlayerRightItemUsage(RenderPlayerEvent.Pre event)
 	{
-		if (!(event.renderer instanceof RenderPlayer)) { return; }
-		if(!(event.entity instanceof EntityPlayer)) { return; }
-
+		
 		//renderPlayerLeftItemUsage(event);
 
-		EntityPlayer entityPlayer = (EntityPlayer) event.entity;
+		EntityPlayer entityPlayer = (EntityPlayer) event.getEntity();
 
-		if (entityPlayer.getHeldItem() == null) { return; }				// Not holding anything
+		if (entityPlayer.getHeldItemMainhand() == null) { return; }				// Not holding anything
 
-		ItemStack mainHand = entityPlayer.getHeldItem();
+		ItemStack mainHand = entityPlayer.getHeldItemMainhand();
 		if (!(mainHand.getItem() instanceof _WeaponBase)) { return; }	// Not mine
 
 		_WeaponBase weapon = (_WeaponBase) mainHand.getItem();
 
 		if (weapon.getCooldown(mainHand) <= 0) { return; }
 
-		RenderPlayer renderer = ((RenderPlayer) event.renderer);
-
+		RenderPlayer renderer = event.getRenderer();
+//TODO: What the actual heck my dude
+	/*
 		// You are holding something
 		renderer.modelArmorChestplate.heldItemRight = 1;
 		renderer.modelArmor.heldItemRight = 1;
@@ -46,6 +46,7 @@ public class ListenerClient
 		renderer.modelArmorChestplate.aimedBow = true;
 		renderer.modelArmor.aimedBow = true;
 		renderer.modelBipedMain.aimedBow = true;
+	*/
 	}
 
 
@@ -59,25 +60,25 @@ public class ListenerClient
 	public void onPlayerTick(PlayerTickEvent event)
 	{
 		if (event.side.isServer()) { return; }			// Only doing this on client side
-		if (event.player != Minecraft.getMinecraft().thePlayer) { return; }	// Only for THIS player, that belongs to the client
+		if (event.player != Minecraft.getMinecraft().player) { return; }	// Only for THIS player, that belongs to the client
 
 		boolean holdingWeapon = false;
 		boolean isSneaking = event.player.isSneaking();
 		float zoomFOV = 0;
 
-		if (event.player.getHeldItem() == null)
+		if (event.player.getHeldItemMainhand() == null)
 		{
 			// Whelp.
 		}
-		else if (event.player.getHeldItem().getItem() instanceof FrostLancer)
+		else if (event.player.getHeldItemMainhand().getItem() instanceof FrostLancer)
 		{
 			holdingWeapon = true;
-			zoomFOV = ((FrostLancer)event.player.getHeldItem().getItem()).ZoomMax;
+			zoomFOV = ((FrostLancer)event.player.getHeldItemMainhand().getItem()).ZoomMax;
 		}
-		else if (event.player.getHeldItem().getItem() instanceof EnderRifle)
+		else if (event.player.getHeldItemMainhand().getItem() instanceof EnderRifle)
 		{
 			holdingWeapon = true;
-			zoomFOV = ((EnderRifle)event.player.getHeldItem().getItem()).ZoomMax;
+			zoomFOV = ((EnderRifle)event.player.getHeldItemMainhand().getItem()).ZoomMax;
 		}
 
 		if (this.wasZoomedLastTick)

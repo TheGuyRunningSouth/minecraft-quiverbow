@@ -1,9 +1,9 @@
 package com.domochevsky.quiverbow.ArmsAssistant;
-
+/*
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.entity.Entity;
-import net.minecraft.util.MathHelper;
+import net.minecraft.util.math.MathHelper;
 
 public class Model_AA extends ModelBase
 {
@@ -350,3 +350,4 @@ public class Model_AA extends ModelBase
 		this.legC4.rotateAngleY = 0.0F;
 	}
 }
+*/

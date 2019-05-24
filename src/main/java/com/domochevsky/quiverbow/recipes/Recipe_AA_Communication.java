@@ -1,20 +1,22 @@
 package com.domochevsky.quiverbow.recipes;
-
+/*
 import java.util.List;
 
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapelessRecipes;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.NonNullList;
 
 import com.domochevsky.quiverbow.ammo.PackedUpAA;
 
 public class Recipe_AA_Communication extends ShapelessRecipes implements IRecipe
 {
-	public Recipe_AA_Communication(ItemStack result, List components) 
+	public Recipe_AA_Communication(ItemStack result, NonNullList<Ingredient> components) 
 	{
-		super(result, components);
+		super("QBItems", result, components);
 	}
 
 	@Override
@@ -38,7 +40,7 @@ public class Recipe_AA_Communication extends ShapelessRecipes implements IRecipe
         return stack;
     }
 	
-	
+	/*
 	private ItemStack getAAFromMatrix(InventoryCrafting matrix)
 	{
 		int counter = 0;
@@ -56,3 +58,4 @@ public class Recipe_AA_Communication extends ShapelessRecipes implements IRecipe
 		return null;
 	}
 }
+*/

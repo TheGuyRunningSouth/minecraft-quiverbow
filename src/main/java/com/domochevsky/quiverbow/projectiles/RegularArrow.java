@@ -8,11 +8,13 @@ import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.play.server.S2BPacketChangeGameState;
+import net.minecraft.network.play.server.SPacketChangeGameState;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -38,7 +40,7 @@ public class RegularArrow extends _ProjectileBase implements IProjectile
 	
 	
 	@Override
-	public void onImpact(MovingObjectPosition hitPos)	// Server-side
+	public void onImpact(RayTraceResult hitPos)	// Server-side
 	{
 		//Console.out().println("Client side: " + this.worldObj.isRemote);
 		
@@ -59,7 +61,7 @@ public class RegularArrow extends _ProjectileBase implements IProjectile
                     // Knockback
                     if (this.knockbackStrength > 0)
                     {
-                    	float distance = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
+                    	float distance = MathHelper.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
 
                         if (distance > 0.0F)
                         {
@@ -76,13 +78,13 @@ public class RegularArrow extends _ProjectileBase implements IProjectile
                     		this.shootingEntity instanceof EntityPlayerMP)
                     {
                     	EntityPlayerMP playerMP = (EntityPlayerMP) this.shootingEntity;
-                    	playerMP.playerNetServerHandler.sendPacket(new S2BPacketChangeGameState(6, 0.0F));	// What're ya sending here?
+                    	playerMP.connection.sendPacket(new SPacketChangeGameState(6, 0.0F));	// What're ya sending here?
                     }
                     // shooter isn't null, target isn't shooter, shooter is a player and a multiplayer
                 }
 
                 // SFX
-                this.playSound("random.bowhit", 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
+                this.playSound(SoundEvents.ENTITY_ARROW_HIT, 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
 
                 if (!(hitPos.entityHit instanceof EntityEnderman)) { this.setDead(); }	// We're done here, assuming we didn't (non)hit an enderman
             }
@@ -100,36 +102,36 @@ public class RegularArrow extends _ProjectileBase implements IProjectile
         }
         else	// Hit the terrain. Looks like we need to keep doing this on client side as well, to properly update arrows stuck in the ground
         {
-        	if (Helper.tryBlockBreak(this.worldObj, this, hitPos, 1) && this.targetsHit < 1) { this.targetsHit += 1; } // Going straight through glass
+        	if (Helper.tryBlockBreak(this.world, this, hitPos, 1) && this.targetsHit < 1) { this.targetsHit += 1; } // Going straight through glass
             else	// Either didn't manage to break that block or we already hit a thing
             {
-		        this.stuckBlockX = hitPos.blockX;
-		        this.stuckBlockY = hitPos.blockY;
-		        this.stuckBlockZ = hitPos.blockZ;
+		        this.stuckBlockX = hitPos.getBlockPos().getX();
+		        this.stuckBlockY = hitPos.getBlockPos().getY();
+		        this.stuckBlockZ = hitPos.getBlockPos().getZ();
 		        
-		        this.stuckBlock = this.worldObj.getBlock(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ);
-		        this.inData = this.worldObj.getBlockMetadata(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ);
+		        this.inState = this.world.getBlockState(new BlockPos(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ));
+		        this.stuckBlock = this.inState.getBlock();
 		        
-		        this.motionX = (double)((float)(hitPos.hitVec.xCoord - this.posX));
-		        this.motionY = (double)((float)(hitPos.hitVec.yCoord - this.posY));
-		        this.motionZ = (double)((float)(hitPos.hitVec.zCoord - this.posZ));
+		        this.motionX = (double)((float)(hitPos.hitVec.x - this.posX));
+		        this.motionY = (double)((float)(hitPos.hitVec.y - this.posY));
+		        this.motionZ = (double)((float)(hitPos.hitVec.z - this.posZ));
 		        
-		        float distance = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
+		        float distance = MathHelper.sqrt(this.motionX * this.motionX + this.motionY * this.motionY + this.motionZ * this.motionZ);
 		        
 		        this.posX -= this.motionX / (double)distance * 0.05000000074505806D;
 		        this.posY -= this.motionY / (double)distance * 0.05000000074505806D;
 		        this.posZ -= this.motionZ / (double)distance * 0.05000000074505806D;
 		        
 		        // SFX
-		        this.playSound("random.bowhit", 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
+		        this.playSound(SoundEvents.ENTITY_ARROW_HIT, 1.0F, 1.2F / (this.rand.nextFloat() * 0.2F + 0.9F));
 		        
 		        this.inGround = true;
 		        
 		        this.arrowShake = 7;
 		
-		        if (this.stuckBlock.getMaterial() != Material.air)
+		        if (this.stuckBlock.getMaterial(inState) != Material.AIR)
 		        {
-		            this.stuckBlock.onEntityCollidedWithBlock(this.worldObj, this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ, this);
+		            this.stuckBlock.onEntityCollidedWithBlock(this.world, new BlockPos(this.stuckBlockX, this.stuckBlockY, this.stuckBlockZ), inState, this);
 		        }
             }
         }
@@ -139,24 +141,24 @@ public class RegularArrow extends _ProjectileBase implements IProjectile
 	@Override
 	public void doFlightSFX() 
 	{ 
-		NetHelper.sendParticleMessageToAllPlayers(this.worldObj, this.getEntityId(), (byte) 13, (byte) 2);
+		NetHelper.sendParticleMessageToAllPlayers(this.world, this.getEntityId(), (byte) 13, (byte) 2);
 	}
 	
 	
 	@Override
 	public void onCollideWithPlayer(EntityPlayer player)	// Arrow pickup
     {
-        if (!this.worldObj.isRemote && this.inGround && this.arrowShake <= 0)
+        if (!this.world.isRemote && this.inGround && this.arrowShake <= 0)
         {
             boolean flag = this.canBePickedUp;
 
             // Can we add this arrow to the player's inventory?
-            if (this.canBePickedUp && !player.inventory.addItemStackToInventory(new ItemStack(Items.arrow, 1))) { flag = false; }
+            if (this.canBePickedUp && !player.inventory.addItemStackToInventory(new ItemStack(Items.ARROW, 1))) { flag = false; }
             // else, either can't pick this arrow up in general, making this a moot point, or the player's inventory is somehow full
 
             if (flag)
             {
-                this.playSound("random.pop", 0.2F, ((this.rand.nextFloat() - this.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                this.playSound(SoundEvents.ENTITY_ITEM_PICKUP, 0.2F, ((this.rand.nextFloat() - this.rand.nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 player.onItemPickup(this, 1);
                 this.setDead();
             }

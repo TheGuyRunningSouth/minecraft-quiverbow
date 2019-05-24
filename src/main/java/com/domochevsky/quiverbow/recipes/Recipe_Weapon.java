@@ -3,8 +3,10 @@ package com.domochevsky.quiverbow.recipes;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.item.crafting.ShapedRecipes;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.NonNullList;
 import net.minecraft.world.World;
 
 import com.domochevsky.quiverbow.Helper;
@@ -14,9 +16,9 @@ public class Recipe_Weapon extends ShapedRecipes implements IRecipe
 {
 	private int upgradeType;
 	
-	public Recipe_Weapon(ItemStack[] components, ItemStack result, int upgradeType) 
+	public Recipe_Weapon(NonNullList<Ingredient> components, ItemStack result, int upgradeType) 
 	{
-		super(3, 3, components, result);
+		super("QBWeapons", 3, 3, components, result);
 		
 		this.upgradeType = upgradeType;
 	}
@@ -39,13 +41,13 @@ public class Recipe_Weapon extends ShapedRecipes implements IRecipe
 		{
 			//if (!world.isRemote) { System.out.println("[RECIPE] Checking " + currentStack + " against " + this.recipeItems[currentSlot]); }
 			
-			if (currentStack != null && this.recipeItems[currentSlot] != null)
+			//if (currentStack != null && this.recipeItems[currentSlot] != null)
 			{
-				if (currentStack.getItem().getClass() != this.recipeItems[currentSlot].getItem().getClass()) { return false; }	// Not the right item
-				else if (currentStack.getItemDamage() != this.recipeItems[currentSlot].getItemDamage()) { return false; }		// Damage doesn't match up
-				else if (currentStack.isStackable() && currentStack.stackSize < this.recipeItems[currentSlot].stackSize) { return false; }	// Not the right amount
-				else 
-				{ 
+				//if (currentStack.getItem().getClass() != this.recipeItems[currentSlot].getItem().getClass()) { return false; }	// Not the right item
+				//else if (currentStack.getItemDamage() != this.recipeItems[currentSlot].getItemDamage()) { return false; }		// Damage doesn't match up
+				//else if (currentStack.isStackable() && currentStack.getCount() < this.recipeItems[currentSlot].stackSize) { return false; }	// Not the right amount
+				//else 
+				//{ 
 					if (currentStack.getItem() instanceof _WeaponBase)	// This is the weapon in question
 					{
 						// Checking for upgrades
@@ -57,9 +59,9 @@ public class Recipe_Weapon extends ShapedRecipes implements IRecipe
 					// else, not the weapon in question
 					
 					matches += 1; 
-				}	// Seems to check out
+				//}	// Seems to check out
 			}
-			else if (currentStack == null && this.recipeItems[currentSlot] == null) { matches += 1;  }	// Both null, so that works for me too
+			//else if (currentStack == null && this.recipeItems[currentSlot] == null) { matches += 1;  }	// Both null, so that works for me too
 			
 			// Next!
 			currentSlot += 1;

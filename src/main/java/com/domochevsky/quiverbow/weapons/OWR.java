@@ -2,15 +2,21 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
-import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
@@ -21,10 +27,10 @@ import com.domochevsky.quiverbow.ammo.ObsidianMagazine;
 import com.domochevsky.quiverbow.net.NetHelper;
 import com.domochevsky.quiverbow.projectiles.OWR_Shot;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class OWR extends _WeaponBase
 {
@@ -44,7 +50,7 @@ public class OWR extends _WeaponBase
 	private int Wither_Duration;	// 20 ticks to a second, let's start with 3 seconds
 	private int Wither_Strength;	// 2 dmg per second for 3 seconds = 6 dmg total
 
-
+/*
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister)
@@ -52,22 +58,24 @@ public class OWR extends _WeaponBase
 		this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/OWR");
 		this.Icon_Empty = par1IconRegister.registerIcon("quiverchevsky:weapons/OWR_Empty");
 	}
+	*/
 
 
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player)
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand)
 	{
-		if (world.isRemote) { return stack; }								// Not doing this on client side
-		if (this.getDamage(stack) >= this.getMaxDamage()) { return stack; }	// Is empty
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS,stack); }								// Not doing this on client side
+		if (this.getDamage(stack) >= this.getMaxDamage()) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Is empty
 
 		if (player.isSneaking())	// Dropping the magazine
 		{
 			this.dropMagazine(world, stack, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
 	}
 
 
@@ -97,16 +105,16 @@ public class OWR extends _WeaponBase
 
 		ShotPotion effect1 = new ShotPotion();
 
-		effect1.potion = Potion.wither;
+		effect1.potion = MobEffects.WITHER;
 		effect1.Strength = this.Wither_Strength;
 		effect1.Duration = this.Wither_Duration;
 
 		projectile.pot1 = effect1;
 
-		world.spawnEntityInWorld(projectile); 			// Firing!
+		world.spawnEntity(projectile); 			// Firing!
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.explode", 0.5F, 1.5F);
+		//world.playSoundAtEntity(entity, "random.explode", 0.5F, 1.5F);
 		NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 16, (byte) 4);	// instant spell
 
 		this.setCooldown(stack, this.Cooldown);
@@ -128,14 +136,14 @@ public class OWR extends _WeaponBase
 
 		// Creating the clip
 		EntityItem entityitem = new EntityItem(world, entity.posX, entity.posY + 1.0d, entity.posZ, clipStack);
-		entityitem.delayBeforeCanPickup = 10;
+		entityitem.setPickupDelay(10);
 
 		// And dropping it
 		if (entity.captureDrops) { entity.capturedDrops.add(entityitem); }
-		else { world.spawnEntityInWorld(entityitem); }
+		else { world.spawnEntity(entityitem); }
 
 		// SFX
-		world.playSoundAtEntity(entity, "random.click", 1.7F, 0.3F);
+		//world.playSoundAtEntity(entity, "random.click", 1.7F, 0.3F);
 	}
 
 
@@ -143,40 +151,40 @@ public class OWR extends _WeaponBase
 	void doCooldownSFX(World world, Entity entity)
 	{
 		NetHelper.sendParticleMessageToAllPlayers(world, entity.getEntityId(), (byte) 11, (byte) 4);	// large smoke
-		world.playSoundAtEntity(entity, "random.fizz", 1.0F, 1.2F);
+		//world.playSoundAtEntity(entity, "random.fizz", 1.0F, 1.2F);
 	}
 
 
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-		super.addInformation(stack, player, list, par4);
+		super.addInformation(stack, world, list, flag);
 
-		if (player.capabilities.isCreativeMode)
+		/*if (player.capabilities.isCreativeMode)
 		{
-			list.add(EnumChatFormatting.BLUE + "Splints: INFINITE / " + this.getMaxDamage());
+			list.add(TextFormatting.BLUE + "Splints: INFINITE / " + this.getMaxDamage());
 		}
 		else
-		{
+		{*/
 			int ammo = this.getMaxDamage() - this.getDamage(stack);
-			list.add(EnumChatFormatting.BLUE + "Splints: " + ammo + " / " + this.getMaxDamage());
-		}
+			list.add(TextFormatting.BLUE + "Splints: " + ammo + " / " + this.getMaxDamage());
+		//}
 
-		list.add(EnumChatFormatting.BLUE + "Physical Damage: " + this.DmgMin + " - " + this.DmgMax);
-		list.add(EnumChatFormatting.BLUE + "Magical Damage: " + this.DmgMagicMin + " - " + this.DmgMagicMax);
+		list.add(TextFormatting.BLUE + "Physical Damage: " + this.DmgMin + " - " + this.DmgMax);
+		list.add(TextFormatting.BLUE + "Magical Damage: " + this.DmgMagicMin + " - " + this.DmgMagicMax);
 
-		list.add(EnumChatFormatting.GREEN + "Wither " + this.Wither_Strength + " for " + this.displayInSec(this.Wither_Duration) + " sec on hit");
+		list.add(TextFormatting.GREEN + "Wither " + this.Wither_Strength + " for " + this.displayInSec(this.Wither_Duration) + " sec on hit");
 
-		list.add(EnumChatFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use");
+		list.add(TextFormatting.RED + "Cooldown for " + this.displayInSec(this.Cooldown) + " sec on use");
 
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to drop the current magazine.");
-		list.add(EnumChatFormatting.YELLOW + "Craft with 1 Obsidian Magazine to");
-		list.add(EnumChatFormatting.YELLOW + "reload when empty.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to drop the current magazine.");
+		list.add(TextFormatting.YELLOW + "Craft with 1 Obsidian Magazine to");
+		list.add(TextFormatting.YELLOW + "reload when empty.");
 
 		list.add("Disturbingly evil to the touch.");
 
-		if (this.getCooldown(stack) > 0) { list.add(EnumChatFormatting.RED + "EXORCISING (" + this.displayInSec(this.getCooldown(stack)) + " sec)"); }
+		if (this.getCooldown(stack) > 0) { list.add(TextFormatting.RED + "EXORCISING (" + this.displayInSec(this.getCooldown(stack)) + " sec)"); }
 	}
 
 
@@ -211,13 +219,13 @@ public class OWR extends _WeaponBase
 	{
 		if (this.Enabled)
 		{
-			// One wither rifle (empty)
+			/*// One wither rifle (empty)
 			GameRegistry.addRecipe(new ItemStack(this, 1 , this.getMaxDamage()), "odo", "owo", "oso",
-					'o', Blocks.obsidian,
-					'd', Items.diamond,
-					's', Items.nether_star,
+					'o', Blocks.OBSIDIAN,
+					'd', Items.DIAMOND,
+					's', Items.NETHER_STAR,
 					'w', Helper.getWeaponStackByClass(OSR.class, true)
-					);
+					);*/
 		}
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 

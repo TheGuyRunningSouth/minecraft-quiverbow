@@ -1,9 +1,10 @@
 package com.domochevsky.quiverbow.AI;
-
+/* TODO: Figure this crap out
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -27,7 +28,7 @@ public class AI_Storage
 				turret.storage[slot] = playerStack.copy();	// Stored
 				if (!player.capabilities.isCreativeMode) { player.setCurrentItemOrArmor(0, null); }	// Empty
 				
-				if (playerStack.getItem() == Items.writable_book && AI_Targeting.isNameOnWhitelist(turret, Commands.cmdStayStationary))
+				if (playerStack.getItem() == Items.WRITABLE_BOOK && AI_Targeting.isNameOnWhitelist(turret, Commands.cmdStayStationary))
 				{
 					//System.out.println("[ARMS ASSISTANT] Received a book with STAY command. Setting target position");
 					turret.stationaryX = turret.posX;
@@ -36,7 +37,7 @@ public class AI_Storage
 				}
 				
 				// Informing the client about this change
-				NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, 
+				NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, 
 						Item.getIdFromItem(turret.storage[slot].getItem()), slot, turret.storage[slot].getItemDamage());
 				
 				return;	// We're done here
@@ -68,7 +69,7 @@ public class AI_Storage
 					if (!player.capabilities.isCreativeMode) { player.setCurrentItemOrArmor(0, null); }	// Empty
 					
 					// Informing the client about this change
-					NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, 
+					NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, 
 							Item.getIdFromItem(turret.storage[slot].getItem()), slot, turret.storage[slot].getItemDamage());
 					return;
 				}
@@ -102,13 +103,13 @@ public class AI_Storage
 		spawner.getTagCompound().setBoolean("hasCommunicationUpgrade", turret.hasCommunicationUpgrade);
 		
 		// Saving the name
-		if (turret.hasCustomNameTag()) { spawner.setStackDisplayName(turret.getCustomNameTag()); }
+		if (turret.hasCustomName()) { spawner.setStackDisplayName(turret.getCustomNameTag()); }
 		
 		dropSingleItem(turret, spawner);	// Drop the packed up AA
 		dropStoredItems(turret);			// Spill your items, too
 		
 		// SFX
-		turret.worldObj.playSoundAtEntity(turret, "random.break", 1.0F, 0.2F);
+		turret.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 0.2F);
 		
 		turret.setDead();
 	}
@@ -128,7 +129,7 @@ public class AI_Storage
 				turret.storage[slot] = null;
 				
 				// Informing the client about this change
-				NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.worldObj, turret, -1, slot, 0);
+				NetHelper.sendTurretInventoryMessageToPlayersInRange(turret.world, turret, -1, slot, 0);
 			}
 			
 			slot += 1;
@@ -139,13 +140,13 @@ public class AI_Storage
 	public static void dropFirstWeapon(Entity_AA turret)
 	{		
 		// Validation
-		if (turret.getHeldItem() == null) { return; }
+		if (turret.getHeldItemMainhand() == null) { return; }
 		if (turret.firstWeapon == null) { return; }
 		
 		if (turret.ownerName.equals("Herobrine")) { return; }	// Nope.
 		
 		// Primary weapon
-		dropSingleItem(turret, turret.getHeldItem());
+		dropSingleItem(turret, turret.getHeldItemMainhand());
 		
 		turret.firstWeapon = null;
 		turret.setCurrentItemOrArmor(0, null);
@@ -157,13 +158,13 @@ public class AI_Storage
 	public static void dropSecondWeapon(Entity_AA turret)
 	{
 		// Validation
-		if (turret.getEquipmentInSlot(1) == null) { return; }
+		if (turret.getHeldItemOffhand() == null) { return; }
 		if (turret.secondWeapon == null) { return; }
 		
 		if (turret.ownerName.equals("Herobrine")) { return; }	// Nope.
 		
 		// Secondary weapon
-		dropSingleItem(turret, turret.getEquipmentInSlot(1));
+		dropSingleItem(turret, turret.getHeldItemOffhand());
 		turret.secondWeapon = null;
 		turret.setCurrentItemOrArmor(1, null);
 		
@@ -177,43 +178,44 @@ public class AI_Storage
 		if (turret.ownerName.equals("Herobrine")) { return; }	// Nope.
 		
 		// Dropping the wither skull and other parts (but not everything. There's some loss)
-		dropSingleItem(turret, new ItemStack(Items.skull, 1, 1));
-		dropSingleItem(turret, new ItemStack(Items.ender_eye, 2));
-		dropSingleItem(turret, new ItemStack(Items.iron_ingot, 4));
-		dropSingleItem(turret, new ItemStack(Blocks.sticky_piston, 2));
+		dropSingleItem(turret, new ItemStack(Items.SKULL, 1, 1));
+		dropSingleItem(turret, new ItemStack(Items.ENDER_EYE, 2));
+		dropSingleItem(turret, new ItemStack(Items.IRON_INGOT, 4));
+		dropSingleItem(turret, new ItemStack(Blocks.STICKY_PISTON, 2));
 		
 		// Dropping stuff that went into the making of this
 		if (turret.hasArmorUpgrade)
 		{
-			dropSingleItem(turret, new ItemStack(Items.diamond, 4));	
+			dropSingleItem(turret, new ItemStack(Items.DIAMOND, 4));	
 		}
 		
 		if (turret.hasMobilityUpgrade)
 		{
-			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.iron_bars), 1));
-			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.sticky_piston), 1));
+			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.IRON_BARS), 1));
+			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.STICKY_PISTON), 1));
 		}
 		
 		if (turret.hasStorageUpgrade)
 		{
-			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.planks), 4));
-			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.obsidian)));
-			dropSingleItem(turret, new ItemStack(Items.slime_ball, 1));
+			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.PLANKS), 4));
+			dropSingleItem(turret, new ItemStack(Item.getItemFromBlock(Blocks.OBSIDIAN)));
+			dropSingleItem(turret, new ItemStack(Items.SLIME_BALL, 1));
 		}
 		
 		if (turret.hasRidingUpgrade)
 		{
-			dropSingleItem(turret, new ItemStack(Items.saddle));
+			dropSingleItem(turret, new ItemStack(Items.SADDLE));
 		}
 	}
 	
 	
 	public static void dropSingleItem(Entity_AA turret, ItemStack stack)
 	{
-		EntityItem entityitem = new EntityItem(turret.worldObj, turret.posX, turret.posY + 1.0d, turret.posZ, stack);
-		entityitem.delayBeforeCanPickup = 10;
+		EntityItem entityitem = new EntityItem(turret.world, turret.posX, turret.posY + 1.0d, turret.posZ, stack);
+		entityitem.setPickupDelay(10);
 		
 		// And dropping it
-		turret.worldObj.spawnEntityInWorld(entityitem);
+		turret.world.spawnEntity(entityitem);
 	}
 }
+*/

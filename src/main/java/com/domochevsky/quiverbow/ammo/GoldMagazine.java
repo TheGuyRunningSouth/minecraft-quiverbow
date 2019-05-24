@@ -2,33 +2,40 @@ package com.domochevsky.quiverbow.ammo;
 
 import java.util.List;
 
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 public class GoldMagazine extends _AmmoBase
 {
+	public String name = "itemGoldMag";
 	public GoldMagazine()
 	{
 		this.setMaxStackSize(1);	// No stacking, since we're filling these up
-		
+		this.setRegistryName(name);
 		this.setMaxDamage(72);		// Filled with gold nuggets (8 shots with 9 scatter, 24 with 3 scatter)
-		this.setCreativeTab(CreativeTabs.tabCombat);	// On the combat tab by default, since this is amunition
+		this.setCreativeTab(CreativeTabs.COMBAT);	// On the combat tab by default, since this is amunition
 		
 		this.setHasSubtypes(true);
 	}
 	
-	
+	/*
 	@SideOnly(Side.CLIENT)
 	private IIcon Icon;
 	@SideOnly(Side.CLIENT)
@@ -51,38 +58,39 @@ public class GoldMagazine extends _AmmoBase
 		
 		return Icon;
     }
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
     {  
-		if (world.isRemote) { return stack; }				// Not doing this on client side
-		if (stack.getItemDamage() == 0) { return stack; }	// Already fully loaded
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }				// Not doing this on client side
+		if (stack.getItemDamage() == 0) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Already fully loaded
 		
 		if (player.isSneaking())
 		{
 			this.fillEight(stack, world, player);
-			return stack;
+			return new ActionResult(EnumActionResult.PASS, stack);
 		}
 		// else, not sneaking, so just filling one
 		
 		boolean doSFX = false;
 		
-		if (player.inventory.hasItem(Items.gold_nugget))
+		if (player.inventory.hasItemStack(new ItemStack(Items.GOLD_NUGGET)))
 		{
 			int dmg = stack.getItemDamage() - 1;
 			stack.setItemDamage(dmg);
-			
-			player.inventory.consumeInventoryItem(Items.gold_nugget);	// We're just grabbing what we need from the inventory
+			player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.GOLD_NUGGET))).shrink(1);
+			// We're just grabbing what we need from the inventory
 			
 			// SFX
 			doSFX = true;
 		}
 		// else, doesn't have what it takes
 		
-		if (doSFX) { world.playSoundAtEntity(player, "random.wood_click", 0.5F, 0.3F); }
+		if (doSFX) { player.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 0.5F, 0.3F); }
 		
-		return stack;
+		return new ActionResult(EnumActionResult.PASS, stack);
     }
 	
 	
@@ -94,12 +102,12 @@ public class GoldMagazine extends _AmmoBase
 		
 		while (counter < 8)
 		{
-			if (player.inventory.hasItem(Items.gold_nugget))
+			if (player.inventory.hasItemStack(new ItemStack(Items.GOLD_NUGGET)))
 			{
 				int dmg = stack.getItemDamage() - 1;
 				stack.setItemDamage(dmg);
-				
-				player.inventory.consumeInventoryItem(Items.gold_nugget);	// We're just grabbing what we need from the inventory
+				player.inventory.getStackInSlot(player.inventory.getSlotFor(new ItemStack(Items.GOLD_NUGGET))).shrink(1);
+				// We're just grabbing what we need from the inventory
 				
 				doSFX = true;
 			}
@@ -108,20 +116,20 @@ public class GoldMagazine extends _AmmoBase
 			counter += 1;
 		}
 		
-		if (doSFX) { world.playSoundAtEntity(player, "random.wood_click", 1.0F, 0.2F); }
+		if (doSFX) { player.playSound(SoundEvents.BLOCK_WOOD_BUTTON_CLICK_ON, 0.5F, 0.2F); }
 	}
 	
 	
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean unknown) 
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag) 
 	{
-		list.add(EnumChatFormatting.BLUE + "Gold Nuggets: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
-		list.add(EnumChatFormatting.YELLOW + "Use magazine to fill it with Gold Nuggets.");
-		list.add(EnumChatFormatting.YELLOW + "Crouch-use to fill it with 8 Gold Nuggets.");
+		list.add(TextFormatting.BLUE + "Gold Nuggets: " + (this.getMaxDamage() - stack.getItemDamage()) + " / " + this.getMaxDamage());
+		list.add(TextFormatting.YELLOW + "Use magazine to fill it with Gold Nuggets.");
+		list.add(TextFormatting.YELLOW + "Crouch-use to fill it with 8 Gold Nuggets.");
 		list.add("A loading helper, full of gold nuggets.");
 		
-		if (!player.inventory.hasItem(Items.gold_nugget)) { list.add(EnumChatFormatting.RED + "You don't have gold nuggets."); }
-		if (player.capabilities.isCreativeMode) { list.add(EnumChatFormatting.RED + "Does not work in creative mode."); }
+		//if (!player.inventory.hasItemStack(Items.GOLD_NUGGET)) { list.add(TextFormatting.RED + "You don't have gold nuggets."); }
+		//if (player.capabilities.isCreativeMode) { list.add(TextFormatting.RED + "Does not work in creative mode."); }
 	}
 	
 	
@@ -132,19 +140,19 @@ public class GoldMagazine extends _AmmoBase
 	@Override
 	public void addRecipes() 
 	{
-		GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "x x", "x x", "xgx",
-		         'x', Items.iron_ingot, 
-		         'g', Items.gold_ingot
-		 );
+		/*GameRegistry.addRecipe(new ItemStack(this, 1, this.getMaxDamage()), "x x", "x x", "xgx",
+		         'x', Items.IRON_INGOT, 
+		         'g', Items.GOLD_INGOT
+		 );*/
 	}
 	
 	
 	@Override
 	@SideOnly(Side.CLIENT)
-	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list) 	// getSubItems
+	public void getSubItems(CreativeTabs par2CreativeTabs, NonNullList<ItemStack> list) 	// getSubItems
 	{
-		list.add(new ItemStack(item, 1, 0));
-		list.add(new ItemStack( item, 1, this.getMaxDamage() ));
+		list.add(new ItemStack(this, 1, 0));
+		list.add(new ItemStack(this, 1, this.getMaxDamage()));
 	}
 	
 	

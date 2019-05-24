@@ -2,7 +2,9 @@ package com.domochevsky.quiverbow.weapons;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IIconRegister;
+import javax.annotation.Nonnull;
+
+import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,31 +12,33 @@ import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.IIcon;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.common.config.Configuration;
 
 import com.domochevsky.quiverbow.Main;
 
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.registry.GameRegistry;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class AA_Targeter extends _WeaponBase
 {
 	public AA_Targeter() 
 	{ 
 		super(1); 
-		this.setCreativeTab(CreativeTabs.tabTools);	// This is a tool
+		this.setCreativeTab(CreativeTabs.TOOLS);	// This is a tool
 	}	// Not consuming ammo	
 	
 	private String nameInternal = "Arms Assistant Targeting Helper";
 	
 	public double targetingDistance = 64;
 	
-	
+/*	
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void registerIcons(IIconRegister par1IconRegister) { this.Icon = par1IconRegister.registerIcon("quiverchevsky:weapons/AA_Targeter"); }
@@ -42,16 +46,17 @@ public class AA_Targeter extends _WeaponBase
 	
 	@Override								
 	public IIcon getIconFromDamage(int meta) { return this.Icon; }
-	
+	*/
 	
 	@Override
-	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) 
+	public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, @Nonnull EnumHand hand) 
 	{
-		if (world.isRemote) { return stack; }	// Not doing this on client side
+		ItemStack stack = player.getHeldItem(hand);
+		if (world.isRemote) { return new ActionResult(EnumActionResult.SUCCESS, stack); }	// Not doing this on client side
 		
 		this.doSingleFire(stack, world, player);	// Handing it over to the neutral firing function
 		
-		return stack;
+		return new ActionResult(EnumActionResult.PASS,stack);
 	}
 	
 	
@@ -62,7 +67,7 @@ public class AA_Targeter extends _WeaponBase
 		this.setCooldown(stack, 4);	// 4 ticks
 		
 		// SFX
-        world.playSoundAtEntity(entity, "random.click", 0.3F, 2.0F);
+       // world.playSoundAtEntity(entity, "random.click", 0.3F, 2.0F);
 	}
 	
 	
@@ -86,13 +91,13 @@ public class AA_Targeter extends _WeaponBase
 	
 	@SideOnly(Side.CLIENT)
 	@Override
-	public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean par4)
+	public void addInformation(ItemStack stack, World world, List<String> list, ITooltipFlag flag)
 	{
-	    super.addInformation(stack, player, list, par4);
+	    super.addInformation(stack, world, list, flag);
 	    
-    	list.add(EnumChatFormatting.BLUE + "Use to let Arms Assistants fire at a common target.");
-    	list.add(EnumChatFormatting.BLUE + "When riding an AA: Use to fire weapon rails.");
-    	list.add(EnumChatFormatting.RED + "All involved AA need the Communications Upgrade.");
+    	list.add(TextFormatting.BLUE + "Use to let Arms Assistants fire at a common target.");
+    	list.add(TextFormatting.BLUE + "When riding an AA: Use to fire weapon rails.");
+    	list.add(TextFormatting.RED + "All involved AA need the Communications Upgrade.");
     	list.add("'Over there!'");
     }
 	
@@ -112,23 +117,23 @@ public class AA_Targeter extends _WeaponBase
 	{ 
 		if (Enabled)
         {
-			GameRegistry.addRecipe(new ItemStack(this), "bi ", "iri", " it",
-            		'b', Blocks.noteblock,
-            		'r', Items.repeater,
-            		't', Blocks.tripwire_hook,
-            		'i', Items.iron_ingot
-            );
+		/*	GameRegistry.addRecipe(new ItemStack(this), "bi ", "iri", " it",
+            		'b', Blocks.NOTEBLOCK,
+            		'r', Items.REPEATER,
+            		't', Blocks.TRIPWIRE_HOOK,
+            		'i', Items.IRON_INGOT
+            );*/
         }
 		else if (Main.noCreative) { this.setCreativeTab(null); }	// Not enabled and not allowed to be in the creative menu
 	}
 	
 	
-	@Override
+	/*@Override
 	@SideOnly(Side.CLIENT)
 	public void getSubItems(Item item, CreativeTabs par2CreativeTabs, List list)
 	{
 		list.add(new ItemStack(item, 1, 0));
-	}
+	}*/
 	
 	
 	@Override
